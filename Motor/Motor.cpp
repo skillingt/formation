@@ -45,6 +45,15 @@ void Motor::driveArdumoto(byte motor, byte dir, byte spd)
   }  
 }
 
+// rotateArdumoto makes the robot rotate 360 degrees
+void Motor::rotateArdumoto(byte spd)
+{
+  digitalWrite(DIRA, 1);
+  analogWrite(PWMA, spd);
+  digitalWrite(DIRB, 0);
+  analogWrite(PWMA, spd);
+}
+
 // stopArdumoto makes a motor stop
 void Motor::stopArdumoto(byte motor)
 {
