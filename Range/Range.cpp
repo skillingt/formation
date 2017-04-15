@@ -19,6 +19,7 @@ Range::Range()
   // Initialize all pins as low:
   //digitalWrite(analog_in, LOW);
 
+  // Initialize serial 
   Serial.begin(9600); 
 }
 
