@@ -19,6 +19,7 @@ class Mag
 		Adafruit_HMC5883_Unified magnetometer;
 	public:
 		Mag();
+		void begin(void);
 		void displaySensorDetails(void);
 		float getHeading(void);
 };

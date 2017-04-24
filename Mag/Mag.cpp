@@ -7,23 +7,33 @@ Released into the public domain.
 
 #include "Mag.h"
 
-Mag::Mag() : magnetometer() {
+Mag::Mag(){
+// Use initializer list for Arduino OOD
+//Mag::Mag() : magnetometer(Adafruit_HMC5883_Unified(1234)) {
+//Mag::Mag() : magnetometer(1234){
 	// Begin serial connection
 	Serial.begin(9600);
 
 	// Assign a unique ID to the sensor at startup
-	//magnetometer = Adafruit_HMC5883_Unified(1234);
+	magnetometer = Adafruit_HMC5883_Unified(1234);
 
-	// Initialize the sensor 
-	if(!magnetometer.begin())
-	{
-		// Error detecting the HMC5883 sensor
-		Serial.println("Unable to detect HMC5883 sensor");
-		while(1);
-	}
+}
 
-	// Display basic sensor information on startup
-	displaySensorDetails();
+void Mag::begin(void){
+  // Initialize the sensor 
+  if(!magnetometer.begin())
+  {
+    // Error detecting the HMC5883 sensor
+    Serial.println("Unable to detect HMC5883 sensor");
+    while(1);
+  }
+  else
+  {
+    Serial.println("Succesfully began");
+  }
+
+  // Display basic sensor information on startup
+  displaySensorDetails();
 }
 
 
