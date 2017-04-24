@@ -52,4 +52,7 @@ void loop() {
   else {
     Serial.println("Undefined Error");
   }
+  
+   // Wait before the next transmission
+   delay(3000);
 }

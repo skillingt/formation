@@ -17,10 +17,29 @@ uint8_t option = 0;
 uint8_t data = 0;
 uint16_t sendAddr = 0;
 
+int led = 11;
+
+void flashLed(int pin, int times, int wait) {
+    
+    for (int i = 0; i < times; i++) {
+      digitalWrite(pin, HIGH);
+      delay(wait);
+      digitalWrite(pin, LOW);
+      
+      if (i + 1 < times) {
+        delay(wait);
+      }
+    }
+}
+
 void setup() {
   // Start serial
   Serial.begin(9600);
   xbee.setSerial(Serial);
+  pinMode(led,  OUTPUT);
+  
+  // Flash the LED on startup
+  flashLed(led, 3, 50);
 }
 
 // Cntinuously reads packets, looking for RX16 or RX64
@@ -48,12 +67,15 @@ void loop() {
                 sendAddr = rx16.getRemoteAddress16();
                 Serial.print("Sender Address (64): "); Serial.println(sendAddr);
         }
+        
+        // Success
+        flashLed(led, 10, 10);
+        
       } else {
       	// not something we were expecting
-        Serial.println("Unexpected");
+        flashLed(led, 2, 10);
       }
     } else if (xbee.getResponse().isError()) {
-      Serial.print("Error reading packet.  Error code: ");  
-      Serial.println(xbee.getResponse().getErrorCode());
+      flashLed(led, 2, 10);
     } 
 }
