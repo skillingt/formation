@@ -27,11 +27,13 @@ void loop(){
   motor.driveArdumoto(MOTOR_B, CW, 255);  // Motor B at max speed.
   delay(1000);  // Drive forward for a second
   // Now go backwards at half that speed:
-  motor.driveArdumoto(MOTOR_A, CCW, 127);  // Motor A at max speed.
-  motor.driveArdumoto(MOTOR_B, CCW, 127);  // Motor B at max speed.
+  motor.driveArdumoto(MOTOR_A, CCW, 255);  // Motor A at max speed.
+  motor.driveArdumoto(MOTOR_B, CCW, 255);  // Motor B at max speed.
 
   // Rotate the robot
-  motor.rotateArdumoto(127);
+  motor.rotateArdumotoCW(255);
+  delay(5000);
+  motor.rotateArdumotoCCW(255);
   delay(5000);
   
   // Stop the motors

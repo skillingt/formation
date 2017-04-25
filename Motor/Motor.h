@@ -31,7 +31,8 @@ class Motor
   public:
     Motor();
     void driveArdumoto(byte motor, byte dir, byte spd);
-    void rotateArdumoto(byte spd);
+    void rotateArdumotoCW(byte spd);
+    void rotateArdumotoCCW(byte spd);
     void stopArdumoto(byte motor);
 };
 

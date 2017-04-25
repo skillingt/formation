@@ -45,12 +45,21 @@ void Motor::driveArdumoto(byte motor, byte dir, byte spd)
   }  
 }
 
-// rotateArdumoto makes the robot rotate 360 degrees
-void Motor::rotateArdumoto(byte spd)
+// rotateArdumoto makes the robot rotate CW at a desired speed
+void Motor::rotateArdumotoCW(byte spd)
 {
-  digitalWrite(DIRA, 1);
+  digitalWrite(DIRA, CCW);
   analogWrite(PWMA, spd);
-  digitalWrite(DIRB, 0);
+  digitalWrite(DIRB, CW);
+  analogWrite(PWMA, spd);
+}
+
+// rotateArdumoto makes the robot rotate CCW at a desired speed
+void Motor::rotateArdumotoCCW(byte spd)
+{
+  digitalWrite(DIRA, CW);
+  analogWrite(PWMA, spd);
+  digitalWrite(DIRB, CCW);
   analogWrite(PWMA, spd);
 }
 
