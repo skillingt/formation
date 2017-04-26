@@ -29,10 +29,10 @@ class Robot
       float distance, bearing;
     };
     Position pos; 
-    Motor *motor;
-    Range *range;
+    Motor motor;
+    Range range;
     // Member functions
-    Robot();
+    void init_Robot();
     bool findObject(Position &pos);
     void flashLed(byte LED);
     bool confirmPosition(Position &pos);

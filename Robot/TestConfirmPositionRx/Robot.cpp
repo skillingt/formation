@@ -6,7 +6,7 @@
 
 #include "Robot.h"
 
-Robot::Robot()
+void Robot::init_Robot()
 {
   // All pins should be setup as outputs:
   pinMode(green_LED, OUTPUT);
@@ -29,8 +29,8 @@ Robot::Robot()
   compass_init(2);
 
   // Initialize Motor and Range objects
-  motor = new Motor();
-  range = new Range();
+  motor.init_Motor();
+  range.init_Range();
 }
 
 /* John to implement
@@ -65,18 +65,18 @@ bool Robot::confirmPosition(Position &pos){
   while(abs(bearing - desired_bearing) > tolerance_deg){
     // Bonus: Determine which was is faster to rotate
     // Rotate the motors
-    motor->rotateArdumotoCW(speed);
+    motor.rotateArdumotoCW(speed);
     delay(time_delay);
     // Stop the motors
-    motor->stopArdumoto(MOTOR_A);
-    motor->stopArdumoto(MOTOR_B);
+    motor.stopArdumoto(MOTOR_A);
+    motor.stopArdumoto(MOTOR_B);
     // Take a measurement, updating the global variable bearing
     delay(time_delay);
     compass_heading();
   }
 
   // Get the distance to the object
-  float inches = range->GetInches();
+  float inches = range.GetInches();
 
   // Check if the distance is within reasonable bounds
   if (abs(inches - pos.distance) < tolerance_in){

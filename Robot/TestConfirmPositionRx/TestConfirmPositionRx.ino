@@ -3,7 +3,6 @@
 #include "Wire.h"
 
 Robot botB; // 1
-Robot botA; // 2
 
 int failLed = 8;
 int statusLed = 9;
@@ -23,6 +22,8 @@ void flashLed(int pin, int times, int wait) {
 }
 
 void setup() {
+  // Call begin function
+  botB.init_Robot();
   // put your setup code here, to run once:
   pinMode(failLed, OUTPUT);
   pinMode(statusLed, OUTPUT);
@@ -33,8 +34,8 @@ void loop() {
   // put your main code here, to run repeatedly:
   bool success;
   
-  // Send to bot 1
-  success = botB.receive(botA.pos);
+  // Receive coordinates from bot 1
+  success = botB.receive(botB.pos);
   
   if (success){
     flashLed(successLed, 4, 200);
@@ -44,6 +45,7 @@ void loop() {
   
   delay(1000);
   
+  // See if we have the correct data
   if (botB.pos.distance > 11.0 && botB.pos.distance < 13.0){
     flashLed(successLed, 4, 200);
   }else{
@@ -52,11 +54,12 @@ void loop() {
   
   delay(3000);
   
+  // Confirm position
   if (botB.pos.control == 1){
     flashLed(successLed, 4, 200);
     delay(1000);
     // Confirm Position
-    botB.confirmPosition(botA.pos);
+    botB.confirmPosition(botB.pos);
     delay(1000);
     flashLed(successLed, 4, 200);
   } else {
