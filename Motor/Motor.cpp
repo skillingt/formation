@@ -51,7 +51,7 @@ void Motor::rotateArdumotoCW(byte spd)
   digitalWrite(DIRA, CCW);
   analogWrite(PWMA, spd);
   digitalWrite(DIRB, CW);
-  analogWrite(PWMA, spd);
+  analogWrite(PWMB, spd);
 }
 
 // rotateArdumoto makes the robot rotate CCW at a desired speed
@@ -60,7 +60,7 @@ void Motor::rotateArdumotoCCW(byte spd)
   digitalWrite(DIRA, CW);
   analogWrite(PWMA, spd);
   digitalWrite(DIRB, CCW);
-  analogWrite(PWMA, spd);
+  analogWrite(PWMB, spd);
 }
 
 // stopArdumoto makes a motor stop
