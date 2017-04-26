@@ -29,7 +29,7 @@ const byte DIRB = 13; // Direction control for motor B
 class Motor
 {
   public:
-    Motor();
+    void init_Motor();
     void driveArdumoto(byte motor, byte dir, byte spd);
     void rotateArdumotoCW(byte spd);
     void rotateArdumotoCCW(byte spd);

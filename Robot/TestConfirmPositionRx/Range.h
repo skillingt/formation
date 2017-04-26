@@ -15,7 +15,7 @@ const byte analog_in = 0;  // Analog Voltage Output
 class Range
 {
   public:
-    Range();
+    void init_Range();
 	int SampleAndAverage();
 	float ConvertToInches(int raw_value);
 	float ConvertToCentimeters(int rawValue);

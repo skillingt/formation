@@ -14,7 +14,7 @@
 
 #include "Motor.h"
 
-Motor::Motor()
+void Motor::init_Motor()
 {
   // All pins should be setup as outputs:
   pinMode(PWMA, OUTPUT);

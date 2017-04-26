@@ -11,7 +11,7 @@
 
 #include "Range.h"
 
-Range::Range()
+void Range::init_Range()
 {
   // All pins should be setup as outputs:
   pinMode(analog_in, INPUT);

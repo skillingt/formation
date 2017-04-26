@@ -29,8 +29,8 @@ class Robot
       float distance, bearing;
     };
     Position pos; 
-    //Motor *motor;
-    //Range *range;
+    Motor *motor;
+    Range *range;
     // Member functions
     Robot();
     bool findObject(Position &pos);

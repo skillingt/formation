@@ -29,8 +29,8 @@ Robot::Robot()
   compass_init(2);
 
   // Initialize Motor and Range objects
-  //motor = new Motor();
-  //range = new Range();
+  motor = new Motor();
+  range = new Range();
 }
 
 /* John to implement
@@ -38,7 +38,7 @@ Position Robot::findObject(){
 
 }
 */
-/*
+
 // Given a position, rotate to opposite bearing, check distance
 bool Robot::confirmPosition(Position &pos){
   // Declare local variables
@@ -85,7 +85,6 @@ bool Robot::confirmPosition(Position &pos){
     return false;
   }
 }
-*/
 
 bool Robot::send(uint16_t addr16, uint8_t* payload){
   // Create an XBee object
