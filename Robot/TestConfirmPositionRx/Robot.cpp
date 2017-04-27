@@ -136,8 +136,8 @@ bool Robot::receive(Position &pos){
 
   // Declare local variables
   uint8_t option = 0;
-  uint8_t data = 0;
   uint16_t sendAddr = 0;
+  uint8_t* data;
 
   // Create reusable response objects for responses we expect to handle 
   Rx16Response rx16 = Rx16Response();
@@ -157,22 +157,75 @@ bool Robot::receive(Position &pos){
                   flashLed(green_LED);
                   xbee.getResponse().getRx16Response(rx16);
                   option = rx16.getOption();
-                  pos.control = rx16.getData(0);
-                  pos.distance = rx16.getData(1);
+                  data = rx16.getData();
+                  pos.control = data[0];
+                  if (data[0] == 1){
+                    flashLed(orange_LED);
+                  } else {
+                    flashLed(red_LED);
+                  }
+                  delay(500);
+                  pos.distance = data[1];
+                  if (data[1] == 12){
+                    flashLed(orange_LED);
+                  } else {
+                    flashLed(red_LED);
+                  }
+                  delay(500);
                   // Construct a uint16_t from two uint8_t
                   uint16_t intermediate = 0x0000;
-                  intermediate = rx16.getData(3);
+                  if (data[3] == 1){
+                    flashLed(orange_LED);
+                  } else {
+                    flashLed(red_LED);
+                  }
+                  delay(500);
+                  intermediate = data[3];
                   intermediate = intermediate << 8;
-                  intermediate |= rx16.getData(2);
+                  intermediate |= data[2];
+                  if (data[2] == 104){
+                    flashLed(orange_LED);
+                  } else {
+                    flashLed(red_LED);
+                  }
                   pos.bearing = intermediate;
                   sendAddr = rx16.getRemoteAddress16();
           } else {
                   flashLed(green_LED);
                   xbee.getResponse().getRx64Response(rx64);
                   option = rx64.getOption();
-                  pos.control = rx16.getData(0);
-                  pos.distance = rx16.getData(1);
-                  pos.bearing = rx16.getData(2);
+                  data = rx16.getData();
+                  pos.control = data[0];
+                  if (data[0] == 1){
+                    flashLed(orange_LED);
+                  } else {
+                    flashLed(red_LED);
+                  }
+                  delay(500);
+                  pos.distance = data[1];
+                  if (data[1] == 12){
+                    flashLed(orange_LED);
+                  } else {
+                    flashLed(red_LED);
+                  }
+                  delay(500);
+                  // Construct a uint16_t from two uint8_t
+                  uint16_t intermediate = 0x0000;
+                  if (data[3] == 1){
+                    flashLed(orange_LED);
+                  } else {
+                    flashLed(red_LED);
+                  }
+                  delay(500);
+                  intermediate = data[3];
+                  intermediate = intermediate << 8;
+                  intermediate |= data[2];
+                  if (data[2] == 104){
+                    flashLed(orange_LED);
+                  } else {
+                    flashLed(red_LED);
+                  }
+                  pos.bearing = intermediate;
                   sendAddr = rx16.getRemoteAddress16();
           }
           // Success

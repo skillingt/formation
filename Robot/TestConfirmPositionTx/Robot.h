@@ -27,6 +27,8 @@ class Robot
     struct Position{
       uint8_t control;
       uint8_t distance;
+      uint8_t bearing1;
+      uint8_t bearing2;
       uint16_t bearing;
     };
     Position pos; 

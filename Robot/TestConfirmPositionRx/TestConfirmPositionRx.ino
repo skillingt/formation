@@ -33,9 +33,9 @@ void setup() {
   
   /*
   flashLed(failLed, 10, 100);
-  delay(1000);
+  delay(100);
   flashLed(statusLed, 10, 100);
-  delay(1000);
+  delay(100);
   flashLed(successLed, 10, 100);
   botB.flashLed(8);
   */
@@ -54,16 +54,16 @@ void loop() {
     flashLed(failLed, 3, 200);
   }
   
-  delay(3000);
+  delay(2000);
   
-  // See if we have the correct data
+  // See if we have the correct distance
   if (botB.pos.distance > 11.0 && botB.pos.distance < 13.0){
     flashLed(successLed, 4, 200);
   }else{
     flashLed(failLed, 4, 100);
   }
   
-  delay(3000);
+  delay(2000);
   
   // Check for bearing by running motors
   if (botB.pos.bearing > 355 && botB.pos.bearing < 365){
@@ -78,7 +78,7 @@ void loop() {
     flashLed(failLed, 4, 100);
   }
   
-  delay(3000);
+  delay(2000);
   
   // Confirm position
   if (botB.pos.control == 1){

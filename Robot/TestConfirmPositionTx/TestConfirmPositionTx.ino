@@ -5,8 +5,10 @@
 Robot botA; // 2
 
 void setup() {
-  // put your setup code here, to run once
-  Serial.begin(9600);
+  // Initialize serial 
+  Serial.begin(9600);  
+  // Call begin function
+  botA.init_Robot();
 }
 
 void loop() {
@@ -15,20 +17,29 @@ void loop() {
   // Control bit = 0 = moveToPosition
   botA.pos.control = 1;
   botA.pos.distance = 12;
-  botA.pos.bearing = 360;
+  botA.pos.bearing1 = 104;
+  botA.pos.bearing2 = 1;
   // Cast to uint8_t*
-  // uint8_t* payload = reinterpret_cast<uint8_t*>(&botA.pos);
+  uint8_t* payload = reinterpret_cast<uint8_t*>(&botA.pos);
+  
+  /* 
+  // Other payload creating methods
   uint8_t payload[4];
   memcpy(payload, &botA.pos, sizeof(botA.pos));
+  uint8_t payload[] = {botA.pos.control, botA.pos.distance, botA.pos.bearing};
+  */
   
-  /*
+  /* 
+  // Debugging Prints
   Serial.println(payload[0]); // control
   Serial.println(payload[1]); // distance
   Serial.println(payload[2]); // bearing
   Serial.println(payload[3]); // bearing
-  uint8_t payload[] = {botA.pos.control, botA.pos.distance, botA.pos.bearing};
   */
   
   // Send to bot 1
   botA.send(0x2345, payload);
+  
+  // Delay to prevent interference from subsequent transmission
+  delay(15000);
 }
