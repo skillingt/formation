@@ -137,6 +137,7 @@ bool Robot::receive(Position &pos){
   // Declare local variables
   uint8_t option = 0;
   uint16_t sendAddr = 0;
+  uint8_t flag = 0;
   uint8_t* data;
 
   // Create reusable response objects for responses we expect to handle 
@@ -158,74 +159,82 @@ bool Robot::receive(Position &pos){
                   xbee.getResponse().getRx16Response(rx16);
                   option = rx16.getOption();
                   data = rx16.getData();
-                  pos.control = data[0];
-                  if (data[0] == 1){
-                    flashLed(orange_LED);
-                  } else {
-                    flashLed(red_LED);
+                  flag = data[0];
+                  switch(flag){
+                    case 0: 
+                      pos.control = data[1];
+                      if (pos.control == 1){
+                        flashLed(orange_LED);
+                      } else {
+                        flashLed(red_LED);
+                      }
+                      break;
+                    case 1: 
+                      pos.distance = data[1];
+                      if (pos.distance == 12){
+                        flashLed(orange_LED);
+                      } else {
+                        flashLed(red_LED);
+                      }
+                      break;
+                    case 2: 
+                      pos.bearing1 = data[1];
+                      if (pos.bearing1 == 104){
+                        flashLed(orange_LED);
+                      } else {
+                        flashLed(red_LED);
+                      }
+                      break;
+                    case 3: 
+                      pos.bearing2 = data[1];
+                      if (pos.bearing2 == 1){
+                        flashLed(orange_LED);
+                      } else {
+                        flashLed(red_LED);
+                      }
+                      break;
                   }
-                  delay(500);
-                  pos.distance = data[1];
-                  if (data[1] == 12){
-                    flashLed(orange_LED);
-                  } else {
-                    flashLed(red_LED);
-                  }
-                  delay(500);
-                  // Construct a uint16_t from two uint8_t
-                  uint16_t intermediate = 0x0000;
-                  if (data[3] == 1){
-                    flashLed(orange_LED);
-                  } else {
-                    flashLed(red_LED);
-                  }
-                  delay(500);
-                  intermediate = data[3];
-                  intermediate = intermediate << 8;
-                  intermediate |= data[2];
-                  if (data[2] == 104){
-                    flashLed(orange_LED);
-                  } else {
-                    flashLed(red_LED);
-                  }
-                  pos.bearing = intermediate;
                   sendAddr = rx16.getRemoteAddress16();
           } else {
                   flashLed(green_LED);
                   xbee.getResponse().getRx64Response(rx64);
                   option = rx64.getOption();
                   data = rx16.getData();
-                  pos.control = data[0];
-                  if (data[0] == 1){
-                    flashLed(orange_LED);
-                  } else {
-                    flashLed(red_LED);
+                  flag = data[0];
+                  switch(flag){
+                    case 0: 
+                      pos.control = data[1];
+                      if (pos.control == 1){
+                        flashLed(orange_LED);
+                      } else {
+                        flashLed(red_LED);
+                      }
+                      break;
+                    case 1: 
+                      pos.distance = data[1];
+                      if (pos.distance == 12){
+                        flashLed(orange_LED);
+                      } else {
+                        flashLed(red_LED);
+                      }
+                      break;
+                    case 2: 
+                      pos.bearing1 = data[1];
+                      if (pos.bearing1 == 104){
+                        flashLed(orange_LED);
+                      } else {
+                        flashLed(red_LED);
+                      }
+                      break;
+                    case 3: 
+                      pos.bearing2 = data[1];
+                      if (pos.bearing2 == 1){
+                        flashLed(orange_LED);
+                      } else {
+                        flashLed(red_LED);
+                      }
+                      break;
                   }
-                  delay(500);
-                  pos.distance = data[1];
-                  if (data[1] == 12){
-                    flashLed(orange_LED);
-                  } else {
-                    flashLed(red_LED);
-                  }
-                  delay(500);
-                  // Construct a uint16_t from two uint8_t
-                  uint16_t intermediate = 0x0000;
-                  if (data[3] == 1){
-                    flashLed(orange_LED);
-                  } else {
-                    flashLed(red_LED);
-                  }
-                  delay(500);
-                  intermediate = data[3];
-                  intermediate = intermediate << 8;
-                  intermediate |= data[2];
-                  if (data[2] == 104){
-                    flashLed(orange_LED);
-                  } else {
-                    flashLed(red_LED);
-                  }
-                  pos.bearing = intermediate;
                   sendAddr = rx16.getRemoteAddress16();
           }
           // Success
