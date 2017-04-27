@@ -25,8 +25,9 @@ class Robot
     // Data members
     uint16_t ID;
     struct Position{
-      byte control;
-      float distance, bearing;
+      uint8_t control;
+      uint8_t distance;
+      uint16_t bearing;
     };
     Position pos; 
     Motor motor;
