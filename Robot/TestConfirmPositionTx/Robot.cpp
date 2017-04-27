@@ -159,7 +159,12 @@ bool Robot::receive(Position &pos){
                   option = rx16.getOption();
                   pos.control = rx16.getData(0);
                   pos.distance = rx16.getData(1);
-                  pos.bearing = rx16.getData(2);
+                  // Construct a uint16_t from two uint8_t
+                  uint16_t intermediate = 0x0000;
+                  intermediate = rx16.getData(3);
+                  intermediate = intermediate << 8;
+                  intermediate |= rx16.getData(2);
+                  pos.bearing = intermediate;
                   sendAddr = rx16.getRemoteAddress16();
           } else {
                   flashLed(green_LED);

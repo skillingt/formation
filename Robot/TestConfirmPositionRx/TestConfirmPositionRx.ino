@@ -66,7 +66,7 @@ void loop() {
   delay(3000);
   
   // Check for bearing by running motors
-  if (botB.pos.bearing > 20 && botB.pos.bearing < 30){
+  if (botB.pos.bearing > 355 && botB.pos.bearing < 365){
     flashLed(statusLed, 10, 200);
     delay(1000);
     botB.motor.driveArdumoto(1, 1, botB.pos.bearing);
