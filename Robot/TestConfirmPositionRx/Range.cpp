@@ -18,9 +18,6 @@ void Range::init_Range()
 
   // Initialize all pins as low:
   //digitalWrite(analog_in, LOW);
-
-  // Initialize serial 
-  Serial.begin(9600); 
 }
 
 // SampleAndAverage takes a number of distance readings and averages them, returning a raw value

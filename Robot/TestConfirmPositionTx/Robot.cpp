@@ -6,7 +6,7 @@
 
 #include "Robot.h"
 
-Robot::Robot()
+void Robot::init_Robot()
 {
   // All pins should be setup as outputs:
   pinMode(green_LED, OUTPUT);
@@ -18,19 +18,10 @@ Robot::Robot()
   digitalWrite(orange_LED, LOW);
   digitalWrite(red_LED, LOW);
 
-  // Initialize the compass
-  compass_x_offset = 88.70;
-  compass_y_offset = -5.66;
-  compass_z_offset = 427.41;
-  compass_x_gainError = 0.98;
-  compass_y_gainError = 1.03;
-  compass_z_gainError = 0.99;
-  
-  compass_init(2);
-
   // Initialize Motor and Range objects
-  motor = new Motor();
-  range = new Range();
+  motor.init_Motor();
+  range.init_Range();
+  mag.begin();
 }
 
 /* John to implement
@@ -47,6 +38,7 @@ bool Robot::confirmPosition(Position &pos){
   float tolerance_deg = 5.0; // 5 degrees
   int time_delay = 50; // time delay in ms
   int speed = 200; // speed in range 0-255
+  float bearing = 0;
 
   // Calculate the desired heading based on the given heading
   desired_bearing = pos.bearing + 180.0;
@@ -56,27 +48,25 @@ bool Robot::confirmPosition(Position &pos){
   }
 
   // Determine current bearing
-  // Call to update compass_AXIS_scalled with the lastest measurements
-  compass_scalled_reading();
-  // Call to update compass_AXIS_scalled and bearing
-  compass_heading();
+  bearing = mag.readCompass();
 
   // Rotate to the desired bearing
   while(abs(bearing - desired_bearing) > tolerance_deg){
     // Bonus: Determine which was is faster to rotate
     // Rotate the motors
-    motor->rotateArdumotoCW(speed);
+    motor.rotateArdumotoCW(speed);
     delay(time_delay);
     // Stop the motors
-    motor->stopArdumoto(MOTOR_A);
-    motor->stopArdumoto(MOTOR_B);
+    motor.stopArdumoto(MOTOR_A);
+    motor.stopArdumoto(MOTOR_B);
     // Take a measurement, updating the global variable bearing
     delay(time_delay);
-    compass_heading();
+    bearing = mag.readCompass();
+    Serial.println(bearing);
   }
 
   // Get the distance to the object
-  float inches = range->GetInches();
+  float inches = range.GetInches();
 
   // Check if the distance is within reasonable bounds
   if (abs(inches - pos.distance) < tolerance_in){

@@ -9,7 +9,7 @@
 #include "Wire.h"
 #include "Motor.h"
 #include "Range.h"
-#include "compass.h"
+#include "HMC5883L.h"
 
 #ifndef Robot_h
 #define Robot_h
@@ -29,10 +29,11 @@ class Robot
       float distance, bearing;
     };
     Position pos; 
-    Motor *motor;
-    Range *range;
+    Motor motor;
+    Range range;
+    HMC5883L mag;
     // Member functions
-    Robot();
+    void init_Robot();
     bool findObject(Position &pos);
     void flashLed(byte LED);
     bool confirmPosition(Position &pos);

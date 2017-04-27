@@ -6,6 +6,7 @@ Robot botA; // 2
 
 void setup() {
   // put your setup code here, to run once
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -14,7 +15,7 @@ void loop() {
   // Control bit = 0 = moveToPosition
   botA.pos.control = 1;
   botA.pos.distance = 12.0;
-  botA.pos.bearing = 270.0;
+  botA.pos.bearing = 25.0;
   uint8_t payload[] = {botA.pos.control, botA.pos.distance, botA.pos.bearing};
   
   // Send to bot 1

@@ -1,6 +1,6 @@
 #include "Robot.h"
 #include "XBee.h"
-#include "Wire.h"
+#include <Wire.h>
 
 Robot botB; // 1
 
@@ -22,12 +22,23 @@ void flashLed(int pin, int times, int wait) {
 }
 
 void setup() {
+  // Initialize serial 
+  Serial.begin(9600); 
   // Call begin function
   botB.init_Robot();
   // put your setup code here, to run once:
   pinMode(failLed, OUTPUT);
   pinMode(statusLed, OUTPUT);
   pinMode(successLed, OUTPUT);
+  
+  /*
+  flashLed(failLed, 10, 100);
+  delay(1000);
+  flashLed(statusLed, 10, 100);
+  delay(1000);
+  flashLed(successLed, 10, 100);
+  botB.flashLed(8);
+  */
 }
 
 void loop() {
@@ -43,11 +54,26 @@ void loop() {
     flashLed(failLed, 3, 200);
   }
   
-  delay(1000);
+  delay(3000);
   
   // See if we have the correct data
   if (botB.pos.distance > 11.0 && botB.pos.distance < 13.0){
     flashLed(successLed, 4, 200);
+  }else{
+    flashLed(failLed, 4, 100);
+  }
+  
+  delay(3000);
+  
+  // Check for bearing by running motors
+  if (botB.pos.bearing > 20 && botB.pos.bearing < 30){
+    flashLed(statusLed, 10, 200);
+    delay(1000);
+    botB.motor.driveArdumoto(1, 1, botB.pos.bearing);
+    botB.motor.driveArdumoto(0, 1, botB.pos.bearing);
+    delay(1000);
+    botB.motor.stopArdumoto(1);
+    botB.motor.stopArdumoto(0);
   }else{
     flashLed(failLed, 4, 100);
   }
