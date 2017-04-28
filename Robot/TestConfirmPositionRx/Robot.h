@@ -10,6 +10,7 @@
 #include "Motor.h"
 #include "Range.h"
 #include "HMC5883L.h"
+#include "range2.h"
 
 #ifndef Robot_h
 #define Robot_h
@@ -42,6 +43,10 @@ class Robot
     bool confirmPosition(Position &pos);
     bool send(uint16_t addr16, uint8_t* payload);
     bool receive(Position &pos);
+    // Helper functions
+    float anglediff(float a, float b);
+    float subdeg(float a, float b);
+    float addeg(float a, float b);
 };
 
 #endif

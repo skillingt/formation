@@ -24,11 +24,103 @@ void Robot::init_Robot()
   mag.begin();
 }
 
-/* John to implement
-Position Robot::findObject(){
+bool Robot::findObject(Position &pos){
+  // Written by John Dunn
+  // Detects an object, rotates past it, then determines the middle
 
+  // Instantiate IMU and Ultrasonic sensors
+  Adafruit_BNO055 bno = Adafruit_BNO055();
+  // Connected to pin 7
+  Ultrasonic ultrasonic(7);
+
+  // Declare local variables
+  float inches;
+  float distance;
+  float distanceFinal;
+  float heading1;
+  float heading2;
+  float heading3;
+  float diff;
+  int TICK_ROTATE1 50
+  int TICK_ROTATE2 50
+  int TICK_STOP1 25
+  int TICK_STOP2 100 
+  int SPEED 150
+  int maxDistance = 60;
+  int distanceBuffer = 3;
+  bool detect = false;
+  bool fineTune = false;
+
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  while (!detect)
+    {
+      motor.rotateArdumotoCW(SPEED*.75);
+      delay(TICK_ROTATE2/1.5);
+      motor.stopArdumoto(MOTOR_A);
+      motor.stopArdumoto(MOTOR_B);
+      delay(TICK_STOP2);
+      ultrasonic.DistanceMeasure();
+      inches = ultrasonic.microsecondsToInches();
+      if(inches <= maxDistance){
+        motor.stopArdumoto(MOTOR_A);
+        motor.stopArdumoto(MOTOR_B);
+        Serial.print("Detected! \n");
+        detect = true;
+        distance = inches;
+        Serial.print("Distance:  ");Serial.print(distance);Serial.print("\n\n");
+        euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+        heading1 = addeg(euler.x(), 180);
+      }     
+    }
+  Serial.print("Finding other side of object.....\n\n");
+  while(!fineTune){
+    motor.rotateArdumotoCW(SPEED*.75);
+    delay(TICK_ROTATE2/2);
+    motor.stopArdumoto(MOTOR_A);
+    motor.stopArdumoto(MOTOR_B);
+    delay(TICK_STOP2);
+    ultrasonic.DistanceMeasure();
+    inches = ultrasonic.microsecondsToInches();
+    if(inches >= distance + distanceBuffer){
+        motor.stopArdumoto(MOTOR_A);
+        motor.stopArdumoto(MOTOR_B);
+        delay(500);
+        euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+        heading2 = addeg(euler.x(), 180);
+        diff = anglediff(heading2, heading1);
+        fineTune = true;
+    } 
+  }
+ 
+  diff = diff/2;
+
+  Serial.print("Rotate CCW to Center.\n\n");
+  euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  while(!(addeg(euler.x(), 180) >= (subdeg(heading2, diff)-2) && addeg(euler.x(), 180) <= (subdeg(heading2, diff)))){
+    motor.rotateArdumotoCCW(SPEED*.75);
+    delay(TICK_ROTATE2/2);
+    motor.stopArdumoto(MOTOR_A);
+    motor.stopArdumoto(MOTOR_B);
+    delay(TICK_STOP2);
+    euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+    euler.x();
+  }  
+  motor.stopArdumoto(MOTOR_A);
+  motor.stopArdumoto(MOTOR_B);
+
+  Serial.print("Pointed at object.\n\n");
+  euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  heading3 = addeg(euler.x(), 180);
+
+  // Determine the distance to the observed object
+  distanceFinal = ultrasonic.microsecondsToInches();
+  Serial.print("Distance:  ");Serial.println(distance);
+
+  // Assign values to the Position struct
+  pos.bearing = heading3;
+  pos.distance = distanceFinal;
 }
-*/
+
 
 // Given a position, rotate to opposite bearing, check distance
 bool Robot::confirmPosition(Position &pos){
@@ -265,4 +357,44 @@ void Robot::flashLed(byte LED) {
         delay(wait);
       }
     }
+}
+
+float Robot::anglediff(float a, float b)     //find the difference between angles/bearings.
+{
+    float big;    //bigger number
+    float small;  //smaller number
+    float answer;
+    if (a > b){
+        big = a;
+        small = b;
+    }
+    else{
+        big = b;
+        small = a;
+    }
+    answer = big - small;
+    if (answer > 180){
+        answer = 360 - answer;
+    }
+    return answer;
+}
+
+float Robot::subdeg(float a, float b)        //subtract angles (a - b)
+{
+    float answer;
+    answer = a - b;
+    if (answer < 0){
+        answer = answer + 360;
+    }
+    return answer;
+}
+
+float Robot::addeg(float a, float b)     // adds two angles
+{
+    float answer;
+    answer = a + b;
+    if (answer > 360){
+        answer = answer - 360;
+    }
+    return answer;
 }
