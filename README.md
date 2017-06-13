@@ -1,2 +1,18 @@
 # formation
-Code pertaining to Spring 2017 Independent Study under Prof. Bahram Shafai on Wireless Robotic Formation, Northeastern University
+Goal: Given arbitrary positions in an open area, have three robots autonomously form an equilateral triangle.
+
+Microcontroller Platform: 
+  Arduino Uno
+
+Communicatons: 
+  Xbee Series 1 Radios
+
+Sensors:
+  Ultrasonic Rangefinders, IMU, Encoders, Motor Shield
+
+Chassis: 
+  Emgreat Motor Robot Car Chassis Kit
+
+Software: C++
+
+Completed Spring/Summer 2017 as part of an Independent Study under Prof. Bahram Shafai, Northeastern University
