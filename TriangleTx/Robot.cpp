@@ -18,20 +18,17 @@ void Robot::init_Robot()
   digitalWrite(orange_LED, LOW);
   digitalWrite(red_LED, LOW);
 
-  // Initialize Motor and IMU objects
+  // Initialize Motor, IMU, and Ultrasonic Sensor objects
   motor.init_Motor();
   bno = Adafruit_BNO055();
   bno.begin();
   bno.setExtCrystalUse(true);
-  Serial.println("Made it past init_Robot");
+  ultrasonic.begin(7);
 }
 
 
 bool Robot::findObject(Position &pos){
-  // Written by John Dunn
   // Detects an object, rotates past it, then determines the middle
-  // Instantiate Ultrasonic sensors
-  Ultrasonic ultrasonic(7);
 
   // Declare local variables
   float inches;
@@ -46,8 +43,8 @@ bool Robot::findObject(Position &pos){
   int TICK_STOP1 = 25;
   int TICK_STOP2 = 100; 
   int SPEED = 150;
-  int maxDistance = 60;
-  int distanceBuffer = 3;
+  int maxDistance = 36;
+  int distanceBuffer = 5;
   bool detect = false;
   bool fineTune = false;
 
@@ -64,15 +61,15 @@ bool Robot::findObject(Position &pos){
       if(inches <= maxDistance){
         motor.stopArdumoto(MOTOR_A);
         motor.stopArdumoto(MOTOR_B);
-        Serial.print("Detected! \n");
+        //Serial.print("Detected! \n");
         detect = true;
         distance = inches;
-        Serial.print("Distance:  ");Serial.print(distance);Serial.print("\n\n");
+        //Serial.print("Distance:  ");Serial.print(distance);Serial.print("\n\n");
         euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
         heading1 = addeg(euler.x(), 180);
       }     
     }
-  Serial.print("Finding other side of object.....\n\n");
+  //Serial.print("Finding other side of object.....\n\n");
   while(!fineTune){
     motor.rotateArdumotoCW(SPEED*.75);
     delay(TICK_ROTATE2/2);
@@ -94,7 +91,7 @@ bool Robot::findObject(Position &pos){
  
   diff = diff/2;
 
-  Serial.print("Rotate CCW to Center.\n\n");
+  //Serial.print("Rotate CCW to Center.\n\n");
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   while(!(addeg(euler.x(), 180) >= (subdeg(heading2, diff)-2) && addeg(euler.x(), 180) <= (subdeg(heading2, diff)))){
     motor.rotateArdumotoCCW(SPEED*.75);
@@ -108,13 +105,13 @@ bool Robot::findObject(Position &pos){
   motor.stopArdumoto(MOTOR_A);
   motor.stopArdumoto(MOTOR_B);
 
-  Serial.print("Pointed at object.\n\n");
+  //Serial.print("Pointed at object.\n\n");
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   heading3 = addeg(euler.x(), 180);
 
   // Determine the distance to the observed object
   distanceFinal = ultrasonic.microsecondsToInches();
-  Serial.print("Distance:  ");Serial.println(distance);
+  //Serial.print("Distance:  ");Serial.println(distance);
 
   // Assign values to the Position struct
   pos.bearing = heading3;
@@ -123,8 +120,6 @@ bool Robot::findObject(Position &pos){
 
 // Given a position, rotate to opposite bearing, check distance
 bool Robot::confirmPosition(Position &pos){
-  // Connected to pin 7
-  Ultrasonic ultrasonic(7);
 
   // Declare local variables
   float desired_bearing = 0.0;
@@ -135,7 +130,7 @@ bool Robot::confirmPosition(Position &pos){
   float bearing = 0;
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
-  Serial.print("Given Bearing: "); Serial.println(pos.bearing);
+  //Serial.print("Given Bearing: "); Serial.println(pos.bearing);
 
   // Calculate the desired heading based on the given heading
   desired_bearing = pos.bearing + 180.0;
@@ -144,14 +139,14 @@ bool Robot::confirmPosition(Position &pos){
     desired_bearing -= 360;
   }
 
-  Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
+  //Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
 
   // Determine current bearing, note sensor is backwards
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   bearing = addeg(euler.x(), 180);
 
-  Serial.print("Current Bearing: "); Serial.println(bearing);
-  Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
+  //Serial.print("Current Bearing: "); Serial.println(bearing);
+  //Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
 
   // Rotate to the desired bearing
   while(abs(bearing - desired_bearing) > tolerance_deg){
@@ -166,18 +161,18 @@ bool Robot::confirmPosition(Position &pos){
     delay(time_delay);
     euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     bearing = addeg(euler.x(), 180);
-    Serial.println(bearing);
+    //Serial.println(bearing);
 
-    Serial.print("Current Bearing: "); Serial.println(bearing);
-    Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
+    //Serial.print("Current Bearing: "); Serial.println(bearing);
+    //Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
   }
 
   // Get the distance to the object
   ultrasonic.DistanceMeasure();
   float inches = ultrasonic.microsecondsToInches();
 
-  Serial.print("Inches: "); Serial.println(inches);
-  Serial.print("Desired Inches: "); Serial.println(pos.distance);
+  //Serial.print("Inches: "); Serial.println(inches);
+  //Serial.print("Desired Inches: "); Serial.println(pos.distance);
 
   // Check if the distance is within reasonable bounds
   if (abs(inches - pos.distance) < tolerance_in){
@@ -187,12 +182,12 @@ bool Robot::confirmPosition(Position &pos){
   }
 }
 
-bool Robot::sendPosition(uint16_t addr16, Position pos){
+bool Robot::sendPosition(uint16_t addr16, Position &pos){
   // Wrapper for Robot::send
   // Breaks a Position struct into four seperate transmission due to XBee
 
   // Declare local variables
-  int time_delay = 5000; // delay in ms
+  int time_delay = 500; // delay in ms
   uint8_t bearing1 = 0x0000;
   uint8_t bearing2 = 0x0000;
 
@@ -327,7 +322,8 @@ bool Robot::receiveConfirmation(){
                   flashLed(green_LED);
                   xbee.getResponse().getRx64Response(rx64);
                   option = rx64.getOption();
-                                    if (data){
+                  data = rx64.getData(0);
+                  if (data == 1){
                     flashLed(orange_LED);
                     return true;
                   } else {

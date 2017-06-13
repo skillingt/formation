@@ -9,7 +9,7 @@
   The last two functions above also exist for centimeters.
 */
 
-#include "Range.h"
+#include "LVRange.h"
 
 Range::Range()
 {

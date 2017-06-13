@@ -3,6 +3,7 @@
   Created by Taylor Skilling, April 25th, 2017.
   Released into the public domain.
 */
+
 #include <Arduino.h>
 
 #include <XBee.h>
@@ -10,8 +11,7 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 #include "Motor.h"
-#include "range2.h"
-
+#include "RadioRange.h"
 
 #ifndef Robot_h
 #define Robot_h
@@ -36,13 +36,15 @@ class Robot
     Position pos; 
     Motor motor;
     Adafruit_BNO055 bno;
+    Ultrasonic ultrasonic;
     // Member functions
     void init_Robot();
+    void rotateToBearing(Position &pos);
     bool findObject(Position &pos);
     void flashLed(byte LED);
     bool confirmPosition(Position &pos);
     bool send(uint16_t addr16, uint8_t* payload);
-    bool sendPosition(uint16_t addr16, const Position pos);
+    bool sendPosition(uint16_t addr16, Position &pos);
     bool receiveConfirmation();
     bool receive(Position &pos);
     void packStruct(Position &pos);

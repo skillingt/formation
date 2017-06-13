@@ -10,7 +10,7 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 #include "Motor.h"
-#include "range3.h"
+#include "HCSR04.h"
 
 #ifndef Robot_h
 #define Robot_h
@@ -35,6 +35,7 @@ class Robot
     Position pos; 
     Motor motor;
     Adafruit_BNO055 bno;
+    Ultrasonic ultrasonic;
     // Member functions
     void init_Robot();
     void rotateToBearing(Position &pos);
@@ -42,7 +43,7 @@ class Robot
     void flashLed(byte LED);
     bool confirmPosition(Position &pos);
     bool send(uint16_t addr16, uint8_t* payload);
-    bool sendPosition(uint16_t addr16, const Position pos);
+    bool sendPosition(uint16_t addr16, Position &pos);
     bool receiveConfirmation();
     bool receive(Position &pos);
     void packStruct(Position &pos);
