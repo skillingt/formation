@@ -26,7 +26,7 @@ Robot botC;
 uint16_t botBaddr = 0x2345;
 uint16_t botCaddr = 0x3456;
 
-// Find local variables
+// Define local variables
 bool foundB = false;
 bool endB = false;
 bool foundC = false;
@@ -38,7 +38,6 @@ uint8_t idC = 0x0000;
 void setup() {
    // Initialize Serial output for debugging
   Serial.begin(9600);
-  Serial.println("Begin");
   // Initialize I2C
   Wire.begin();
   // Initialize Robot object
@@ -46,10 +45,10 @@ void setup() {
 }
 
 void loop() {
-    // Detect the first unknown robot, denoting it botB
-    botA.findObject(botB.pos);
     // Signify that we are looking to confirm the position
     botB.pos.control = 1;
+    // Detect the first unknown robot, denoting it botB
+    botA.findObject(botB.pos);
     
     while (!endB){
       // Send the recorded position to a given robot and determine its ID
@@ -71,11 +70,6 @@ void loop() {
           endB = true;
         } else {
           // Unable to find
-          botA.flashLed(red_LED);
-          delay(1000);
-          botA.flashLed(red_LED);
-          delay(1000);
-          botA.flashLed(red_LED);
         }
       }
   }

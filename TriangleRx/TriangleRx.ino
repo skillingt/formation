@@ -5,8 +5,7 @@ This code:
   Determines which robot should move
   Instructs a robot to move to complete an equilateral triangle
   
-  Note: This code is intented to run on either the reference or moving robot
-  0x2345 or 0x3456
+  Note: This code is intented to run on either the reference or moving robot with XBee addresses 0x2345 or 0x3456
 */
 
 #include <math.h>
@@ -28,7 +27,6 @@ uint16_t botBaddr = 0x1234;
 void setup() {
    // Initialize Serial output for debugging
   Serial.begin(9600);
-  Serial.println("Begin");
   // Initialize I2C
   Wire.begin();
   // Initialize Robot object
@@ -47,27 +45,12 @@ void loop() {
   botA.receive(botA.pos);
   botA.receive(botA.pos);
   
-  // Construct a valid bearing from the sent Position struct
+  // Construct a valid bearing from the received Position struct
   botA.packStruct(botA.pos);
   // Determine if we're the identified robot
-  if (botA.pos.control == 1){
-    
-    botA.flashLed(green_LED);
-    delay(1000);
-    botA.flashLed(orange_LED);
-    delay(1000);
-    botA.flashLed(green_LED);
-    delay(1000);
-    
+  if (botA.pos.control == 1){   
     // Confirm position
     success = botA.confirmPosition(botA.pos);
-    
-    botA.flashLed(green_LED);
-    delay(1000);
-    botA.flashLed(orange_LED);
-    delay(1000);
-    botA.flashLed(green_LED);
-    delay(1000);
     
     // Construct the payload to send back
     if (success == true){
@@ -76,31 +59,10 @@ void loop() {
       uint8_t confirmation[] = { 0, 0 };
     }  
     
-    botA.flashLed(green_LED);
-    delay(1000);
-    botA.flashLed(orange_LED);
-    delay(1000);
-    botA.flashLed(green_LED);
-    delay(1000);
-    
     // Send the payload
     botA.send(botBaddr, confirmation);
-    
-    
-    botA.flashLed(green_LED);
-    delay(1000);
-    botA.flashLed(orange_LED);
-    delay(1000);
-    botA.flashLed(green_LED);
-    delay(1000);
-    
   } else if (botA.pos.control == 0){
-    botA.flashLed(orange_LED);
-    delay(1000);
-    botA.flashLed(green_LED);
-    delay(1000);
-    botA.flashLed(orange_LED);
-    delay(1000);
+    // Drive to given position to form a triangle
     // Rotate
     botA.rotateToBearing(botA.pos);
     // Drive
@@ -110,7 +72,6 @@ void loop() {
     botA.motor.driveDistanceStr8(speed, centimeters);
   } else {
     // Control bit not identified
-    botA.flashLed(red_LED);
   }
   
   ////// -------- TEST CODE ------------

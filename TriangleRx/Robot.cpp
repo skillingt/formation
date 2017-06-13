@@ -29,24 +29,19 @@ void Robot::init_Robot()
 void Robot::rotateToBearing(Position &pos){
   // Rotate the robot until it reaches a desired bearing
   // Declare local variables
-  float desired_bearing = 0.0;
-  float tolerance_deg = 5.0; // 5 degrees
+  double desired_bearing = 0.0;
+  double tolerance_deg = 5.0; // 5 degrees
   int time_delay = 50; // time delay in ms
   int speed = 150; // speed in range 0-255
-  float bearing = 0;
+  double bearing = 0.0;
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-
-  //Serial.print("Given Bearing: "); Serial.println(pos.bearing);
 
   // Determine current bearing, note sensor is backwards
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  bearing = addeg(euler.x(), 180);
-
-  //Serial.print("Current Bearing: "); Serial.println(bearing);
-  //Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
+  bearing = addeg(euler.x(), 180.0);
 
   // Rotate to the desired bearing
-  while(abs(bearing - (pos.bearing - 10)) > tolerance_deg){
+  while(abs(bearing - (pos.bearing - 10.0)) > tolerance_deg){
     // Bonus: Determine which was is faster to rotate
     // Rotate the motors
     motor.rotateArdumotoCW(speed);
@@ -57,119 +52,112 @@ void Robot::rotateToBearing(Position &pos){
     // Take a measurement, updating the global variable bearing
     delay(time_delay);
     euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    bearing = addeg(euler.x(), 180);
-    //Serial.println(bearing);
-
-    //Serial.print("Current Bearing: "); Serial.println(bearing);
-    //Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
+    bearing = addeg(euler.x(), 180.0);
   }
 }
 
 
-bool Robot::findObject(Position &pos){
+bool Robot::findObject(Position &pos) {
   // Detects an object, rotates past it, then determines the middle
+  // Note: 180 is added to the heading due to the orientation of the sensor on the chassis
 
-  // Declare local variables
-  float inches;
-  float distance;
-  float distanceFinal;
-  float heading1;
-  float heading2;
-  float heading3;
-  float diff;
-  int TICK_ROTATE1 = 50;
-  int TICK_ROTATE2 = 50;
-  int TICK_STOP1 = 25;
-  int TICK_STOP2 = 100; 
-  int SPEED = 150;
-  int maxDistance = 60;
-  int distanceBuffer = 3;
-  bool detect = false;
-  bool fineTune = false;
+  // Measurements
+  long inches;
+  long distance;
+  double initial_heading;
+  double end_heading;
+  double angle_diff;
+  double desired_angle;
+  // Motor parameters
+  int rotate_speed = 120;
+  int rotate_time = 30;
+  int rotate_delay = 100;
+  // Boundary conditions
+  int max_distance = 36; // (in inches)
+  int distance_buffer = 5;
+  // Detection Logic Flags
+  bool detected = false;
+  bool fine_tune = false;
 
+  // Initiate the IMU 
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  while (!detect)
-    {
-      motor.rotateArdumotoCW(SPEED*.75);
-      delay(TICK_ROTATE2/1.5);
-      motor.stopArdumoto(MOTOR_A);
-      motor.stopArdumoto(MOTOR_B);
-      delay(TICK_STOP2);
-      ultrasonic.DistanceMeasure();
-      inches = ultrasonic.microsecondsToInches();
-      if(inches <= maxDistance){
-        motor.stopArdumoto(MOTOR_A);
-        motor.stopArdumoto(MOTOR_B);
-        //Serial.print("Detected! \n");
-        detect = true;
-        distance = inches;
-        //Serial.print("Distance:  ");Serial.print(distance);Serial.print("\n\n");
-        euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-        heading1 = addeg(euler.x(), 180);
-      }     
-    }
-  //Serial.print("Finding other side of object.....\n\n");
-  while(!fineTune){
-    motor.rotateArdumotoCW(SPEED*.75);
-    delay(TICK_ROTATE2/2);
+  while (!detected){
+    // Rotate the chassis counter clockwise incrementally
+    motor.rotateArdumotoCW(rotate_speed);
+    delay(rotate_time);
     motor.stopArdumoto(MOTOR_A);
     motor.stopArdumoto(MOTOR_B);
-    delay(TICK_STOP2);
+    delay(rotate_delay);
+    // Measure the distance to whatever object is in front of the sensor
     ultrasonic.DistanceMeasure();
     inches = ultrasonic.microsecondsToInches();
-    if(inches >= distance + distanceBuffer){
-        motor.stopArdumoto(MOTOR_A);
-        motor.stopArdumoto(MOTOR_B);
-        delay(500);
-        euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-        heading2 = addeg(euler.x(), 180);
-        diff = anglediff(heading2, heading1);
-        fineTune = true;
-    } 
+    // If an object is within the valid distance (inches) for another robot
+    if(inches <= max_distance){
+      // Found another robot
+      detected = true;
+      motor.stopArdumoto(MOTOR_A);
+      motor.stopArdumoto(MOTOR_B);
+      // Record the distance and current heading
+      distance = inches;
+      euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+      initial_heading = addeg(euler.x(), 180);
+    }     
   }
- 
-  diff = diff/2;
-
-  //Serial.print("Rotate CCW to Center.\n\n");
-  euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  while(!(addeg(euler.x(), 180) >= (subdeg(heading2, diff)-2) && addeg(euler.x(), 180) <= (subdeg(heading2, diff)))){
-    motor.rotateArdumotoCCW(SPEED*.75);
-    delay(TICK_ROTATE2/2);
+  // Visual confirmation of detection
+  delay(1000);
+  // Determine the location of the other side of the detected robot
+  while(!fine_tune){
+    motor.rotateArdumotoCW(rotate_speed);
+    delay(rotate_time);
     motor.stopArdumoto(MOTOR_A);
     motor.stopArdumoto(MOTOR_B);
-    delay(TICK_STOP2);
+    delay(rotate_delay);
+    ultrasonic.DistanceMeasure();
+    inches = ultrasonic.microsecondsToInches();
+    if(inches >= distance + distance_buffer){
+      fine_tune = true;
+      motor.stopArdumoto(MOTOR_A);
+      motor.stopArdumoto(MOTOR_B);
+      delay(500);
+      euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+      end_heading = addeg(euler.x(), 180);
+      // Determine the difference between the two angles
+      angle_diff = anglediff(end_heading, initial_heading);  
+    } 
+  }
+  // Determine the midway point
+  desired_angle = angle_diff/2;
+  // Visual confirmation of detection
+  delay(1000);
+  // Rotate to the center of the detected robot
+  euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  while(!(addeg(euler.x(), 180) >= (subdeg(end_heading, desired_angle)-2) && addeg(euler.x(), 180) <= (subdeg(end_heading, desired_angle)))){
+    motor.rotateArdumotoCCW(rotate_speed);
+    delay(rotate_time);
+    motor.stopArdumoto(MOTOR_A);
+    motor.stopArdumoto(MOTOR_B);
+    delay(rotate_delay);
     euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     euler.x();
-  }  
-  motor.stopArdumoto(MOTOR_A);
-  motor.stopArdumoto(MOTOR_B);
+  } 
 
-  //Serial.print("Pointed at object.\n\n");
+  // Record the final heading and distance 
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  heading3 = addeg(euler.x(), 180);
-
-  // Determine the distance to the observed object
-  distanceFinal = ultrasonic.microsecondsToInches();
-  //Serial.print("Distance:  ");Serial.println(distance);
-
-  // Assign values to the Position struct
-  pos.bearing = heading3;
-  pos.distance = distanceFinal;
+  pos.bearing = addeg(euler.x(), 180);
+  pos.distance = ultrasonic.microsecondsToInches();
 }
 
 bool Robot::confirmPosition(Position &pos){
-// Given a position, rotate to opposite bearing, check distance
-
+  // Given a position, rotate to opposite bearing, check distance
+  
   // Declare local variables
-  float desired_bearing = 0.0;
-  float tolerance_in = 8.0; // 6 inches
-  float tolerance_deg = 3.0; // 5 degrees
+  double desired_bearing = 0.0;
+  double tolerance_in = 3.0; // 3 inches
+  double tolerance_deg = 5.0; // 5 degrees
   int time_delay = 50; // time delay in ms
-  int speed = 150; // speed in range 0-255
-  float bearing = 0;
+  int speed = 200; // speed in range 0-255
+  double bearing = 0; 
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-
-  //Serial.print("Given Bearing: "); Serial.println(pos.bearing);
 
   // Calculate the desired heading based on the given heading
   desired_bearing = pos.bearing + 180.0;
@@ -178,18 +166,13 @@ bool Robot::confirmPosition(Position &pos){
     desired_bearing -= 360;
   }
 
-  //Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
-
   // Determine current bearing, note sensor is backwards
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   bearing = addeg(euler.x(), 180);
 
-  //Serial.print("Current Bearing: "); Serial.println(bearing);
-  //Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
-
   // Rotate to the desired bearing
   while(abs(bearing - desired_bearing) > tolerance_deg){
-    // Bonus: Determine which was is faster to rotate
+    // TODO(Bonus): Determine which way is faster to rotate
     // Rotate the motors
     motor.rotateArdumotoCW(speed);
     delay(time_delay);
@@ -200,18 +183,11 @@ bool Robot::confirmPosition(Position &pos){
     delay(time_delay);
     euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     bearing = addeg(euler.x(), 180);
-    //Serial.println(bearing);
-
-    //Serial.print("Current Bearing: "); Serial.println(bearing);
-    //Serial.print("Desired Bearing: "); Serial.println(desired_bearing);
   }
 
   // Get the distance to the object
   ultrasonic.DistanceMeasure();
-  float inches = ultrasonic.microsecondsToInches();
-
-  //Serial.print("Inches: "); Serial.println(inches);
-  //Serial.print("Desired Inches: "); Serial.println(pos.distance);
+  long inches = ultrasonic.microsecondsToInches();
 
   // Check if the distance is within reasonable bounds
   if (abs(inches - pos.distance) < tolerance_in){
@@ -226,9 +202,7 @@ bool Robot::sendPosition(uint16_t addr16, Position &pos){
   // Breaks a Position struct into four seperate transmission due to XBee
 
   // Declare local variables
-  int time_delay = 5000; // delay in ms
-  uint8_t bearing1 = 0x0000;
-  uint8_t bearing2 = 0x0000;
+  int time_delay = 500; // delay in ms
 
   // Split bearing from a uint16_t to two uint8_ts 
   pos.bearing1 = pos.bearing & 0xff;
@@ -295,22 +269,22 @@ bool Robot::send(uint16_t addr16, uint8_t* payload){
         // Get the delivery status, the fifth byte
           if (txStatus.getStatus() == SUCCESS) {
             // Success
-            flashLed(green_LED);
+            flashLed(green_LED, 2);
             return true;
           } else {
             // Remote XBee did not receive the packet
-            flashLed(red_LED);
+            flashLed(red_LED, 2);
             return false;
           }
         }      
   } else if (xbee.getResponse().isError()) {
     // Packet received in error
-    flashLed(red_LED);
+    flashLed(red_LED, 2);
     return false;
   }
   else {
     // Return packet not receieved
-    flashLed(red_LED);
+    flashLed(red_LED, 2);
     return false;
   }
 }
@@ -345,39 +319,50 @@ bool Robot::receiveConfirmation(){
         if (xbee.getResponse().getApiId() == RX_16_RESPONSE || xbee.getResponse().getApiId() == RX_64_RESPONSE) {
           // Received an Rx packet
           if (xbee.getResponse().getApiId() == RX_16_RESPONSE) {
-                  flashLed(green_LED);
-                  xbee.getResponse().getRx16Response(rx16);
-                  option = rx16.getOption();
-                  data = rx16.getData(0);
-                  if (data == 1){
-                    flashLed(orange_LED);
-                    return true;
-                  } else {
-                    flashLed(red_LED);
-                    return false;
-                  }
-                  sendAddr = rx16.getRemoteAddress16();
+            xbee.getResponse().getRx16Response(rx16);
+            option = rx16.getOption();
+            data = rx16.getData(0);
+            if (data){
+              flashLed(green_LED, 1);
+              flashLed(orange_LED, 1);
+              flashLed(green_LED, 1);
+              flashLed(orange_LED, 1);
+              return true;
+            } else {
+              flashLed(red_LED, 1);
+              flashLed(orange_LED, 1);
+              flashLed(red_LED, 1);
+              flashLed(orange_LED, 1);
+              return false;
+            }
+            sendAddr = rx16.getRemoteAddress16();
           } else {
-                  flashLed(green_LED);
-                  xbee.getResponse().getRx64Response(rx64);
-                  option = rx64.getOption();
-                  if (data){
-                    flashLed(orange_LED);
-                    return true;
-                  } else {
-                    flashLed(red_LED);
-                    return false;
-                  }
-                  sendAddr = rx16.getRemoteAddress16();
+            xbee.getResponse().getRx64Response(rx64);
+            option = rx64.getOption();
+            data = rx64.getData(0);
+            if (data){
+              flashLed(green_LED, 1);
+              flashLed(orange_LED, 1);
+              flashLed(green_LED, 1);
+              flashLed(orange_LED, 1);
+              return true;
+            } else {
+              flashLed(red_LED, 1);
+              flashLed(orange_LED, 1);
+              flashLed(red_LED, 1);
+              flashLed(orange_LED, 1);
+              return false;
+            }
+            sendAddr = rx16.getRemoteAddress16();
           }
         } else {
           // Received a different type of packet than expected
-          flashLed(red_LED);
+          flashLed(red_LED, 3);
           return false;
         }
       } else if (xbee.getResponse().isError()) {
         // Packet received in error
-        flashLed(red_LED);
+        flashLed(red_LED, 3);
         return false;
       } 
   }
@@ -401,6 +386,7 @@ bool Robot::receive(Position &pos){
   Rx64Response rx64 = Rx64Response();
 
   // Continuously reads packets, looking for RX16 or RX64
+  // Enable idle LED for visual aid
   digitalWrite(orange_LED, HIGH);
   while(true){
       // Try and receive a packet
@@ -411,59 +397,65 @@ bool Robot::receive(Position &pos){
         if (xbee.getResponse().getApiId() == RX_16_RESPONSE || xbee.getResponse().getApiId() == RX_64_RESPONSE) {
           // Received an Rx packet
           if (xbee.getResponse().getApiId() == RX_16_RESPONSE) {
-                  flashLed(green_LED);
-                  xbee.getResponse().getRx16Response(rx16);
-                  option = rx16.getOption();
-                  data = rx16.getData();
-                  flag = data[0];
-                  switch(flag){
-                    case 0: 
-                      pos.control = data[1];
-                      break;
-                    case 1: 
-                      pos.distance = data[1];
-                      break;
-                    case 2: 
-                      pos.bearing1 = data[1];
-                      break;
-                    case 3: 
-                      pos.bearing2 = data[1];
-                      break;
-                  }
-                  sendAddr = rx16.getRemoteAddress16();
+            xbee.getResponse().getRx16Response(rx16);
+            option = rx16.getOption();
+            data = rx16.getData();
+            // Determine which piece of data was receieved
+            flag = data[0];
+            // Update the position structure with received data
+            switch(flag){
+              case 0: 
+                pos.control = data[1];
+                flashLed(green_LED, 1);
+                break;
+              case 1: 
+                pos.distance = data[1];;
+                flashLed(green_LED, 2);
+                break;
+              case 2: 
+                pos.bearing1 = data[1];
+                flashLed(green_LED, 3);
+                break;
+              case 3: 
+                pos.bearing2 = data[1];
+                flashLed(green_LED, 4);
+                break;
+            }
+            sendAddr = rx16.getRemoteAddress16();
           } else {
-                  flashLed(green_LED);
-                  xbee.getResponse().getRx64Response(rx64);
-                  option = rx64.getOption();
-                  data = rx16.getData();
-                  flag = data[0];
-                  switch(flag){
-                    case 0: 
-                      pos.control = data[1];
-                      break;
-                    case 1: 
-                      pos.distance = data[1];
-                      break;
-                    case 2: 
-                      pos.bearing1 = data[1];
-                      break;
-                    case 3: 
-                      pos.bearing2 = data[1];
-                      break;
-                  }
-                  sendAddr = rx16.getRemoteAddress16();
+            xbee.getResponse().getRx64Response(rx64);
+            option = rx64.getOption();
+            data = rx16.getData();
+            flag = data[0];
+            switch(flag){
+              case 0: 
+                pos.control = data[1];
+                flashLed(green_LED, 1);
+                break;
+              case 1: 
+                pos.distance = data[1];
+                flashLed(green_LED, 2);
+                break;
+              case 2: 
+                pos.bearing1 = data[1];
+                flashLed(green_LED, 3);
+                break;
+              case 3: 
+                pos.bearing2 = data[1];
+                flashLed(green_LED, 4);
+                break;
+            }
+            sendAddr = rx16.getRemoteAddress16();
           }
-          // Success
-          flashLed(green_LED);
           return true;
         } else {
           // Received a different type of packet than expected
-          flashLed(red_LED);
+          flashLed(red_LED, 3);
           return false;
         }
       } else if (xbee.getResponse().isError()) {
         // Packet received in error
-        flashLed(red_LED);
+        flashLed(red_LED, 3);
         return false;
       } 
   }
@@ -475,18 +467,19 @@ void Robot::packStruct(Position &pos){
   pos.bearing |= pos.bearing1;
 }
 
-void Robot::flashLed(byte LED) {
-    int times = 5;
-    int wait = 100;
-    for (int i = 0; i < times; i++) {
-      digitalWrite(LED, HIGH);
+void Robot::flashLed(byte pin, int times) {
+  // 2 Flashes (Green or Red): Send
+  // 3 Flashes (Green or Red): Receive 
+  // Alternating Green or Red and Orange Flashes: ID
+  int wait = 100;
+  for (int i = 0; i < times; i++) {
+    digitalWrite(pin, HIGH);
+    delay(wait);
+    digitalWrite(pin, LOW);
+    if (i + 1 < times) {
       delay(wait);
-      digitalWrite(LED, LOW);
-      
-      if (i + 1 < times) {
-        delay(wait);
-      }
     }
+  }
 }
 
 // Find the difference between angles/bearings

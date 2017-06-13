@@ -40,7 +40,7 @@ class Robot
     void init_Robot();
     void rotateToBearing(Position &pos);
     bool findObject(Position &pos);
-    void flashLed(byte LED);
+    void flashLed(byte pin, int times);
     bool confirmPosition(Position &pos);
     bool send(uint16_t addr16, uint8_t* payload);
     bool sendPosition(uint16_t addr16, Position &pos);
