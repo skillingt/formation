@@ -36,12 +36,14 @@ void Robot::rotateToBearing(Position &pos){
   double bearing = 0.0;
   imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
 
-  // Determine current bearing, note sensor is backwards
+  desired_bearing = pos.bearing;
+
+  // Determine current bearing, noting sensor is "backwards"
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   bearing = addeg(euler.x(), 180.0);
 
   // Rotate to the desired bearing
-  while(abs(bearing - (pos.bearing - 10.0)) > tolerance_deg){
+  while(abs(bearing - desired_bearing) > tolerance_deg){
     // Bonus: Determine which was is faster to rotate
     // Rotate the motors
     motor.rotateArdumotoCW(speed);
@@ -152,35 +154,12 @@ bool Robot::confirmPosition(Position &pos){
   // check the distance to an object and send to the master
   
   // Declare local variables
-  double bearing = 0.0; 
-  double desired_bearing = 0.0;
   double tolerance_in = 5.0; // 5 inches
-  double tolerance_deg = 5.0; // 5 degrees
-  int time_delay = 30; // time delay in ms
-  int speed = 120; // speed in range 0-255
 
-  // Calculate the desired heading based on the given heading
-  desired_bearing = addeg(pos.bearing, 180.0);
+  // Calculate the reverse angle
+  pos.bearing = backAngle(pos.bearing);
 
-  // Determine current bearing, note sensor is backwards
-  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  bearing = addeg(euler.x(), 180.0);
-
-  // Rotate to the desired bearing
-  while(abs(bearing - desired_bearing) > tolerance_deg){
-    // TODO(Bonus): Determine which way is faster to rotate
-    // Rotate the motors
-    motor.rotateArdumotoCW(speed);
-    delay(time_delay);
-    // Stop the motors
-    motor.stopArdumoto(MOTOR_A);
-    motor.stopArdumoto(MOTOR_B);
-    // Take a measurement, updating the global variable bearing
-    delay(time_delay);
-    euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    bearing = addeg(euler.x(), 180);
-  }
+  rotateToBearing(pos);
 
   // Get the distance to the object
   ultrasonic.DistanceMeasure();
@@ -319,7 +298,7 @@ bool Robot::receiveConfirmation(){
             xbee.getResponse().getRx16Response(rx16);
             option = rx16.getOption();
             data = rx16.getData(0);
-            if (data == 1){
+            if (data == 0xff){
               flashLed(green_LED, 3);
               delay(500);
               flashLed(orange_LED, 3);
@@ -328,7 +307,7 @@ bool Robot::receiveConfirmation(){
               delay(500);
               flashLed(orange_LED, 3);
               return true;
-            } else {
+            } else if (data == 0x00){
               flashLed(red_LED, 3);
               delay(500);
               flashLed(orange_LED, 3);
@@ -337,13 +316,21 @@ bool Robot::receiveConfirmation(){
               delay(500);
               flashLed(orange_LED, 3);
               return false;
+            } else {
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
             }
             sendAddr = rx16.getRemoteAddress16();
           } else {
             xbee.getResponse().getRx64Response(rx64);
             option = rx64.getOption();
             data = rx64.getData(0);
-            if (data == 1){
+            if (data == 0xff){
               flashLed(green_LED, 3);
               delay(500);
               flashLed(orange_LED, 3);
@@ -352,7 +339,7 @@ bool Robot::receiveConfirmation(){
               delay(500);
               flashLed(orange_LED, 3);
               return true;
-            } else {
+            } else if (data == 0x00){
               flashLed(red_LED, 3);
               delay(500);
               flashLed(orange_LED, 3);
@@ -361,6 +348,14 @@ bool Robot::receiveConfirmation(){
               delay(500);
               flashLed(orange_LED, 3);
               return false;
+            } else {
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
             }
             sendAddr = rx16.getRemoteAddress16();
           }
@@ -525,8 +520,8 @@ float Robot::subdeg(float a, float b){
 float Robot::addeg(float a, float b){
     float answer;
     answer = a + b;
-    if (answer > 360){
-        answer = answer - 360;
+    if (answer > 360.0){
+        answer = answer - 360.0;
     }
     return answer;
 }
@@ -534,8 +529,8 @@ float Robot::addeg(float a, float b){
 // Return the opposite direction
 float Robot::backAngle(float a) {
   float answer;
-  if (a < 180) answer = a + 180;
-  else answer = a - 180;
+  if (a < 180.0) answer = a + 180.0;
+  else answer = a - 180.0;
   return answer;
 }
 

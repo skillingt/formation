@@ -269,9 +269,10 @@ bool Robot::receiveConfirmation(){
   xbee.setSerial(Serial);
 
   // Declare local variables
-  uint8_t option = 0;
-  uint16_t sendAddr = 0;
-  uint8_t data = 0;
+  uint8_t option = 0x00;
+  uint16_t sendAddr = 0x0000;
+  uint8_t data_1 = 0x00;
+  uint8_t data_2 = 0x00;
 
   // Create reusable response objects for responses we expect to handle 
   Rx16Response rx16 = Rx16Response();
@@ -289,9 +290,35 @@ bool Robot::receiveConfirmation(){
           // Received an Rx packet
           if (xbee.getResponse().getApiId() == RX_16_RESPONSE) {
             xbee.getResponse().getRx16Response(rx16);
+            sendAddr = rx16.getRemoteAddress16();
             option = rx16.getOption();
-            data = rx16.getData(0);
-            if (data == 1){
+            data_1 = rx16.getData(0);
+            data_2 = rx16.getData(1);
+            // See what data bits are coming in
+            delay(500);
+            digitalWrite(green_LED, HIGH);
+            delay(2000);
+            digitalWrite(green_LED, LOW);
+            delay(500);
+            for (int i = 0; i < data_1; i++){
+              digitalWrite(red_LED, HIGH);
+              delay(300);
+              digitalWrite(red_LED, LOW);
+              delay(300);
+            }
+            delay(500);
+            digitalWrite(green_LED, HIGH);
+            delay(2000);
+            digitalWrite(green_LED, LOW);
+            delay(500);
+            for (int i = 0; i < data_2; i++){
+              digitalWrite(red_LED, HIGH);
+              delay(300);
+              digitalWrite(red_LED, LOW);
+              delay(300);
+            }
+            delay(5000);
+            if (data_1 == 0x06 && data_2 == 0x06){
               flashLed(green_LED, 3);
               delay(500);
               flashLed(orange_LED, 3);
@@ -300,7 +327,7 @@ bool Robot::receiveConfirmation(){
               delay(500);
               flashLed(orange_LED, 3);
               return true;
-            } else if (data == 0){
+            } else if (data_1 == 0x04 && data_2 == 0x04){
               flashLed(red_LED, 3);
               delay(500);
               flashLed(orange_LED, 3);
@@ -309,32 +336,50 @@ bool Robot::receiveConfirmation(){
               delay(500);
               flashLed(orange_LED, 3);
               return false;
-            }
-            sendAddr = rx16.getRemoteAddress16();
-          } else {
-            xbee.getResponse().getRx64Response(rx64);
-            option = rx64.getOption();
-            data = rx64.getData(0);
-            if (data == 1){
-              flashLed(green_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
-              delay(500);
-              flashLed(green_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
-              return true;
             } else {
               flashLed(red_LED, 3);
               delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              return false;
+            }
+          } else {
+            xbee.getResponse().getRx64Response(rx64);
+            sendAddr = rx64.getRemoteAddress64();
+            option = rx64.getOption();
+            data_1 = rx64.getData(0);
+            data_2 = rx64.getData(1);
+            if (data_1 == 0xDD && data_2 == 0xDD){
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              return true;
+            } else if (data_1 == 0xCC && data_2 == 0xCC){
+              flashLed(red_LED, 3);
+              delay(500);
               flashLed(orange_LED, 3);
               delay(500);
               flashLed(red_LED, 3);
               delay(500);
               flashLed(orange_LED, 3);
               return false;
+            } else {
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              return false;
             }
-            sendAddr = rx16.getRemoteAddress16();
           }
         } else {
           // Received a different type of packet than expected
