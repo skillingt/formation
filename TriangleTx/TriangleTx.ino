@@ -26,7 +26,7 @@ Robot botC;
 uint16_t botBaddr = 0x2345;
 uint16_t botCaddr = 0x3456;
 
-// Define local variables
+// Define variables
 bool foundB = false;
 bool endB = false;
 bool foundC = false;
@@ -55,12 +55,28 @@ void loop() {
       success = botA.sendPosition(0x2345, botB.pos);
       // Other robot will send back a bool signifying whether it is the robot in question
       foundB = botA.receiveConfirmation();
-      // Danger
-      foundB = true;
-      if (foundB){
+      if (foundB == true){
+        botA.flashLed(green_LED, 8);
+        delay(500);
+        botA.flashLed(orange_LED, 8);
+        delay(500);
+        botA.flashLed(green_LED, 8);
+        delay(500);
+        botA.flashLed(orange_LED, 8);
+        delay(500);
         idB = 0x2345;
         endB = true;
+        //break;
       } else {
+        foundB = false;
+        botA.flashLed(red_LED, 8);
+        delay(500);
+        botA.flashLed(orange_LED, 8);
+        delay(500);
+        botA.flashLed(red_LED, 8);
+        delay(500);
+        botA.flashLed(orange_LED, 8);
+        delay(500);
         // Try the other robot
         success = botA.sendPosition(0x3456, botB.pos);
         // Other robot will send back a bool signifying whether it is the robot in question
@@ -68,6 +84,7 @@ void loop() {
         if (foundB){
           idB = 0x3456;
           endB = true;
+          //break;
         } else {
           // Unable to find
         }
@@ -76,20 +93,19 @@ void loop() {
   
   // Rotate the robot to avoid detecting the other object
   botA.motor.rotateArdumotoCW(150);
-  delay(50);
+  delay(100);
   botA.motor.rotateArdumotoCW(150);
-  delay(50);
+  delay(100);
   botA.motor.rotateArdumotoCW(150);
-  delay(50);
+  delay(100);
   botA.motor.rotateArdumotoCW(150);
-  delay(50);
+  delay(100);
 
-
-  // Detect the second robot, denoting it botC
-  botA.findObject(botC.pos);
   // Signify that we are looking to confirm the position
   botC.pos.control = 1;
-  
+  // Detect the second robot, denoting it botC
+  botA.findObject(botC.pos);
+
   while(!endC){
   // Send the recorded position to a given robot and determine its ID
   // If the previous robot was ID 0x2345, try the other robot
@@ -97,11 +113,10 @@ void loop() {
       success = botA.sendPosition(0x3456, botC.pos);
       // Other robot will send back a bool signifying whether it is the robot in question
       foundC = botA.receiveConfirmation();
-      // Danger
-      foundC = true;
       if (foundC){
         idC = 0x3456;
         endC = true;
+        break;
       }
     } else {
       success = botA.sendPosition(0x2345, botC.pos);
@@ -116,7 +131,7 @@ void loop() {
   
   // Run the algorithm given that we know two robot coordinates
   botA.findTriangle(botB.pos, botC.pos, botA.pos);
-  // Determine the moving robot from the set control bit
+  // Determine the moving robot from the control bit
   uint16_t moveAddr = 0x000;
   if (botA.pos.control == 1){
     // botB is moving
@@ -125,7 +140,7 @@ void loop() {
     // botC is moving
     moveAddr = idC;
   } else {
-    Serial.println("Undefined behavior");
+    // Undefined behavior
   }    
   
   // Signify that we are looking for the robot to move

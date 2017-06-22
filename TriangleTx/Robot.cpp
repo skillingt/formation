@@ -291,17 +291,23 @@ bool Robot::receiveConfirmation(){
             xbee.getResponse().getRx16Response(rx16);
             option = rx16.getOption();
             data = rx16.getData(0);
-            if (data){
-              flashLed(green_LED, 1);
-              flashLed(orange_LED, 1);
-              flashLed(green_LED, 1);
-              flashLed(orange_LED, 1);
+            if (data == 1){
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
               return true;
-            } else {
-              flashLed(red_LED, 1);
-              flashLed(orange_LED, 1);
-              flashLed(red_LED, 1);
-              flashLed(orange_LED, 1);
+            } else if (data == 0){
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
               return false;
             }
             sendAddr = rx16.getRemoteAddress16();
@@ -309,17 +315,23 @@ bool Robot::receiveConfirmation(){
             xbee.getResponse().getRx64Response(rx64);
             option = rx64.getOption();
             data = rx64.getData(0);
-            if (data){
-              flashLed(green_LED, 1);
-              flashLed(orange_LED, 1);
-              flashLed(green_LED, 1);
-              flashLed(orange_LED, 1);
+            if (data == 1){
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
               return true;
             } else {
-              flashLed(red_LED, 1);
-              flashLed(orange_LED, 1);
-              flashLed(red_LED, 1);
-              flashLed(orange_LED, 1);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
               return false;
             }
             sendAddr = rx16.getRemoteAddress16();

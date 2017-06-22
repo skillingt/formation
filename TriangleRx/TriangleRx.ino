@@ -24,6 +24,10 @@ Robot botB; // Master robot
 // Record the XBee addresses of the master robot
 uint16_t botBaddr = 0x1234;
 
+// Declare variables
+bool success;
+uint8_t confirmation[2];
+
 void setup() {
    // Initialize Serial output for debugging
   Serial.begin(9600);
@@ -34,12 +38,8 @@ void setup() {
 }
 
 void loop() {
-  // Declare local variables
-  bool success;
-  uint8_t confirmation[2];
-  
   // Wait to receive data in order to confirm position
-  // Receive all 4 pieces of data
+  // Receive all 4 pieces of position data
   botA.receive(botA.pos);
   botA.receive(botA.pos);
   botA.receive(botA.pos);
@@ -52,15 +52,33 @@ void loop() {
     // Confirm position
     success = botA.confirmPosition(botA.pos);
     
-    // Construct the payload to send back
+    delay(3000);
+    
+    // Construct a message to send back to the Master
     if (success == true){
+      botA.flashLed(green_LED, 10);
       uint8_t confirmation[] = { 1, 0 };
-    } else {
+    } else if (success == false){
+      botA.flashLed(red_LED, 10);
       uint8_t confirmation[] = { 0, 0 };
-    }  
+    } else {
+      botA.flashLed(red_LED, 3);
+      botA.flashLed(orange_LED, 3);
+      botA.flashLed(green_LED, 3);
+    }
+    
+    delay(3000);
     
     // Send the payload
     botA.send(botBaddr, confirmation);
+    
+    botA.flashLed(green_LED, 5);
+    delay(500);
+    botA.flashLed(red_LED, 5);
+    delay(500);
+    botA.flashLed(green_LED, 5);
+    
+    delay(3000);
   } else if (botA.pos.control == 0){
     // Drive to given position to form a triangle
     // Rotate
@@ -139,7 +157,5 @@ void loop() {
   
   delay(15000);
   */
-
-  
   //// -------- END TEST CODE -------------- 
 }

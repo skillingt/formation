@@ -5,7 +5,7 @@
   Released into the public domain.
 
   Three useful functions are defined:
-    setupArdumoto() -- Setup the Ardumoto Shield pins
+    init_Motor() -- Setup the Ardumoto Shield pins
     driveArdumoto([motor], [direction], [speed]) -- Drive [motor] 
       (0 for A, 1 for B) in [direction] (0 or 1) at a [speed]
       between 0 and 255. It will spin until told to stop.
@@ -14,8 +14,9 @@
 
 #include "Motor.h"
 
-volatile int remDistanceA; //set by driveDistance() and modified by distanceDecrement(). 
-//remDistance units = slots on encoder = 20/22 cm.
+// Set by driveDistance() and modified by distanceDecrement()
+volatile int remDistanceA; 
+// remDistance units = slots on encoder = 20/22 cm
 volatile int remDistanceB;
 
 void Motor::init_Motor()

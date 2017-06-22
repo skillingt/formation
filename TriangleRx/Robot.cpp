@@ -148,27 +148,24 @@ bool Robot::findObject(Position &pos) {
 }
 
 bool Robot::confirmPosition(Position &pos){
-  // Given a position, rotate to opposite bearing, check distance
+  // Given a position, rotate to 180 opposite bearing, 
+  // check the distance to an object and send to the master
   
   // Declare local variables
+  double bearing = 0.0; 
   double desired_bearing = 0.0;
-  double tolerance_in = 3.0; // 3 inches
+  double tolerance_in = 5.0; // 5 inches
   double tolerance_deg = 5.0; // 5 degrees
-  int time_delay = 50; // time delay in ms
-  int speed = 200; // speed in range 0-255
-  double bearing = 0; 
-  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  int time_delay = 30; // time delay in ms
+  int speed = 120; // speed in range 0-255
 
   // Calculate the desired heading based on the given heading
-  desired_bearing = pos.bearing + 180.0;
-  // Check bounds
-  if (desired_bearing > 360){
-    desired_bearing -= 360;
-  }
+  desired_bearing = addeg(pos.bearing, 180.0);
 
   // Determine current bearing, note sensor is backwards
+  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  bearing = addeg(euler.x(), 180);
+  bearing = addeg(euler.x(), 180.0);
 
   // Rotate to the desired bearing
   while(abs(bearing - desired_bearing) > tolerance_deg){
@@ -322,17 +319,23 @@ bool Robot::receiveConfirmation(){
             xbee.getResponse().getRx16Response(rx16);
             option = rx16.getOption();
             data = rx16.getData(0);
-            if (data){
-              flashLed(green_LED, 1);
-              flashLed(orange_LED, 1);
-              flashLed(green_LED, 1);
-              flashLed(orange_LED, 1);
+            if (data == 1){
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
               return true;
             } else {
-              flashLed(red_LED, 1);
-              flashLed(orange_LED, 1);
-              flashLed(red_LED, 1);
-              flashLed(orange_LED, 1);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
               return false;
             }
             sendAddr = rx16.getRemoteAddress16();
@@ -340,17 +343,23 @@ bool Robot::receiveConfirmation(){
             xbee.getResponse().getRx64Response(rx64);
             option = rx64.getOption();
             data = rx64.getData(0);
-            if (data){
-              flashLed(green_LED, 1);
-              flashLed(orange_LED, 1);
-              flashLed(green_LED, 1);
-              flashLed(orange_LED, 1);
+            if (data == 1){
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(green_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
               return true;
             } else {
-              flashLed(red_LED, 1);
-              flashLed(orange_LED, 1);
-              flashLed(red_LED, 1);
-              flashLed(orange_LED, 1);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
+              delay(500);
+              flashLed(red_LED, 3);
+              delay(500);
+              flashLed(orange_LED, 3);
               return false;
             }
             sendAddr = rx16.getRemoteAddress16();
