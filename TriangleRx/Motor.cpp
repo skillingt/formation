@@ -15,9 +15,8 @@
 #include "Motor.h"
 
 // Set by driveDistance() and modified by distanceDecrement()
-volatile int remDistanceA; 
-// remDistance units = slots on encoder = 20/22 cm
-volatile int remDistanceB;
+volatile uint8_t remainingDistanceA; 
+volatile uint8_t remainingDistanceB;
 
 void Motor::init_Motor()
 {
@@ -74,46 +73,59 @@ void Motor::stopArdumoto(byte motor)
   driveArdumoto(motor, 0, 0);
 }
 
+// Function declarations based on EnableInterrupt library
 void distanceDecrementA()
 {
-  remDistanceA--;
+  remainingDistanceA--;
 }
 void distanceDecrementB()
 {
-  remDistanceB--;
+  remainingDistanceB--;
 }
 
 // Function which drives a certain distance, with compensation for shit-tier motors
-// Distance in cm. Spd has to be about 120-150.
-void Motor::driveDistanceStr8(byte spd, float distance) 
+// Distance is in centimeters
+void Motor::driveDistance(uint8_t spd, double distance) 
 {
-  int countA = 0;
-  int countB = 0;
-  driveArdumoto(MOTOR_A, CW, spd);
-  driveArdumoto(MOTOR_B, CW, spd);
-  float numWheels = distance/22;
-  int numSlots = numWheels*20;
-  remDistanceA = numSlots;
-  remDistanceB = numSlots;
+  // Declare variables
+  uint8_t wheel_circumference_cm = 22;
+  uint8_t num_slots = 20;
+  double scale = 0.8;
+
+  // Determine the number of encoder slots needed to pass
+  double num_rotations = distance / wheel_circumference_cm;
+  uint8_t total_slots = num_rotations * num_slots;
+
+  // Assign to volatile variables, necessary for library
+  remainingDistanceA = total_slots;
+  remainingDistanceB = total_slots;
+
+  // Enable Interrupt Library
   enableInterrupt(SPDA, distanceDecrementA, RISING);
   enableInterrupt(SPDB, distanceDecrementB, RISING);
-  while(remDistanceA>0){
-    delay(1);
-    if ((remDistanceA % 12) == 0){
-      if (remDistanceA > remDistanceB) {
-        driveArdumoto(MOTOR_B, CW, spd*.6);
-        countB=0;
-      }
-      if (remDistanceA < remDistanceB) {
-        driveArdumoto(MOTOR_A, CW, spd*.6);
-        countA=0;
+
+  // Begin driving
+  driveArdumoto(MOTOR_A, CW, spd);
+  driveArdumoto(MOTOR_B, CW, spd);
+
+  // While there's distance left to go!
+  while(remainingDistanceA > 0){
+    // Check every quarter rotation of the wheel
+    if ((remainingDistanceA % (num_slots / 4)) == 0){
+      // If the right wheel is turning faster, slow it down, and vice-versa
+      if (remainingDistanceA > remainingDistanceB){
+        driveArdumoto(MOTOR_B, CW, spd * scale);
+      } else if (remainingDistanceA < remainingDistanceB) {
+        driveArdumoto(MOTOR_A, CW, spd * scale);
+      } else {
+        driveArdumoto(MOTOR_A, CW, spd);
+        driveArdumoto(MOTOR_B, CW, spd);
       }
     }
-    if (countA==10) driveArdumoto(MOTOR_A, CW, spd);
-    if (countB==10) driveArdumoto(MOTOR_B, CW, spd);
-    countA++;
-    countB++;
   }
+  // Stop the robot and disable interrupts  
+  stopArdumoto(0);
+  stopArdumoto(1);
   disableInterrupt(SPDA);
   disableInterrupt(SPDB);
 }

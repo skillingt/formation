@@ -40,7 +40,7 @@ class Motor
     void rotateArdumotoCW(byte spd);
     void rotateArdumotoCCW(byte spd);
     void stopArdumoto(byte motor);
-    void driveDistanceStr8(byte spd, float distance);
+    void driveDistance(uint8_t spd, double distance);
 };
 
 #endif
