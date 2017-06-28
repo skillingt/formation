@@ -47,13 +47,11 @@ class Robot
     bool receiveConfirmation();
     bool receive(Position &pos);
     void packStruct(Position &pos);
-    void findTriangle(Position &pos, Position &pos2, Position &pos3);
-    // Helper functions for angles and findTriangle
-    float anglediff(float a, float b);
-    float subdeg(float a, float b);
-    float addeg(float a, float b);
-    float backAngle(float a);
-    float betaDirSelect(float brgMOV, float brgREF, float beta);
+    // Helper functions for angles 
+    uint8_t diffAngle(uint8_t a, uint8_t b);
+    uint8_t subAngle(uint8_t a, uint8_t b);
+    uint8_t addAngle(uint8_t a, uint8_t b);
+    uint8_t backAngle(uint8_t a);
 };
 
 #endif
