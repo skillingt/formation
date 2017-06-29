@@ -48,10 +48,10 @@ class Robot
     bool receive(Position &pos);
     void packStruct(Position &pos);
     // Helper functions for angles 
-    uint8_t diffAngle(uint8_t a, uint8_t b);
-    uint8_t subAngle(uint8_t a, uint8_t b);
-    uint8_t addAngle(uint8_t a, uint8_t b);
-    uint8_t backAngle(uint8_t a);
+    uint16_t diffAngle(uint16_t a, uint16_t b);
+    uint16_t subAngle(uint16_t a, uint16_t b);
+    uint16_t addAngle(uint16_t a, uint16_t b);
+    uint16_t backAngle(uint16_t a);
 };
 
 #endif

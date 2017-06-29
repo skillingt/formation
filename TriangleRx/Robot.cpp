@@ -48,7 +48,7 @@ void Robot::rotateToBearing(Position &pos){
 
   // Determine which way to rotate the robot
   // Subtract the desired bearing from the current
-  uint8_t direction = subAngle(desired_bearing, current_bearing);
+  uint16_t direction = subAngle(desired_bearing, current_bearing);
 
   // Rotate to the desired bearing
   while(abs(current_bearing - desired_bearing) > tolerance_deg){
@@ -298,26 +298,26 @@ void Robot::flashLed(byte pin, int times) {
   }
 }
 
-uint8_t Robot::diffAngle(uint8_t a, uint8_t b){
+uint16_t Robot::diffAngle(uint16_t a, uint16_t b){
   // Returns the difference between two angles [0, 180]
   return (abs(a - b) > 180) ? abs(abs(a - b) - 360) : abs(a - b);
 }
 
-uint8_t Robot::subAngle(uint8_t a, uint8_t b){
+uint16_t Robot::subAngle(uint16_t a, uint16_t b){
   // Returns the result of (a - b)
-  uint8_t answer;
+  uint16_t answer;
   answer = a - b;
   return (answer < 0) ? answer += 360 : answer;
 }
 
-uint8_t Robot::addAngle(uint8_t a, uint8_t b){
+uint16_t Robot::addAngle(uint16_t a, uint16_t b){
   // Returns the result of (a - b)
-  uint8_t answer;
+  uint16_t answer;
   answer = a + b;
   return (answer > 360) ? (answer - 360) : answer;
 }
 
-uint8_t Robot::backAngle(uint8_t a) {
+uint16_t Robot::backAngle(uint16_t a) {
   // Return the opposite direction
   return (a < 180) ? a + 180 : a - 180;
 }
