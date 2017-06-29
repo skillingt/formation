@@ -50,11 +50,11 @@ class Robot
     void packStruct(Position &pos);
     void findTriangle(Position &pos, Position &pos2, Position &pos3);
     // Helper functions for angles and findTriangle
-    float anglediff(float a, float b);
-    float subdeg(float a, float b);
-    float addeg(float a, float b);
-    float backAngle(float a);
     float betaDirSelect(float brgMOV, float brgREF, float beta);
+    uint16_t diffAngle(uint16_t a, uint16_t b);
+    uint16_t subAngle(uint16_t a, uint16_t b);
+    uint16_t addAngle(uint16_t a, uint16_t b);
+    uint16_t backAngle(uint16_t a);
 };
 
 #endif

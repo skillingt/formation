@@ -8,6 +8,7 @@ This code:
   Note: This code is intented to run on the "Master," XBee address 0x1234
 */
 
+#include <avr/sleep.h>
 #include <math.h>
 #include <Wire.h>
 #include <XBee.h>
@@ -32,8 +33,8 @@ bool endB = false;
 bool foundC = false;
 bool endC = false;
 bool success = false;
-uint8_t idB = 0x0000;
-uint8_t idC = 0x0000;
+uint16_t idB = 0x0000;
+uint16_t idC = 0x0000;
 
 void setup() {
    // Initialize Serial output for debugging
@@ -42,74 +43,59 @@ void setup() {
   Wire.begin();
   // Initialize Robot object
   botA.init_Robot();
+  // Delay in order to physically rotate the robots, calibrating IMU
+  delay(6000);
 }
 
-void loop() {
+void loop() {    
+  while (!endB){
+    // LED Indication
+    botA.flashLed(green_LED, 3);
     // Signify that we are looking to confirm the position
     botB.pos.control = 1;
     // Detect the first unknown robot, denoting it botB
     botA.findObject(botB.pos);
-    
-    while (!endB){
-      // Send the recorded position to a given robot and determine its ID
-      success = botA.sendPosition(0x2345, botB.pos);
+    // Send the recorded position to a given robot and determine its ID
+    success = botA.sendPosition(0x2345, botB.pos);
+    // Other robot will send back a bool signifying whether it is the robot in question
+    foundB = botA.receiveConfirmation();
+    if (foundB == true){
+      idB = 0x2345;
+      endB = true;
+    } else {
+       // Rotate the robot to avoid detecting the same object twice
+      botA.motor.rotateArdumotoCW(120);
+      delay(175);
+      botA.motor.stopArdumoto(MOTOR_A);
+      botA.motor.stopArdumoto(MOTOR_B);
+      // Try the other robot
+      success = botA.sendPosition(0x3456, botB.pos);
       // Other robot will send back a bool signifying whether it is the robot in question
       foundB = botA.receiveConfirmation();
-      if (foundB == true){
-        botA.flashLed(green_LED, 8);
-        delay(500);
-        botA.flashLed(orange_LED, 8);
-        delay(500);
-        botA.flashLed(green_LED, 8);
-        delay(500);
-        botA.flashLed(orange_LED, 8);
-        delay(500);
-        idB = 0x2345;
+      if (foundB){
+        idB = 0x3456;
         endB = true;
-        //break;
-      } else {
-        foundB = false;
-        botA.flashLed(red_LED, 8);
-        delay(500);
-        botA.flashLed(orange_LED, 8);
-        delay(500);
-        botA.flashLed(red_LED, 8);
-        delay(500);
-        botA.flashLed(orange_LED, 8);
-        delay(500);
-        // Try the other robot
-        success = botA.sendPosition(0x3456, botB.pos);
-        // Other robot will send back a bool signifying whether it is the robot in question
-        foundB = botA.receiveConfirmation();
-        if (foundB){
-          idB = 0x3456;
-          endB = true;
-          //break;
-        } else {
-          // Unable to find
-        }
       }
+    }
   }
   
-  // Rotate the robot to avoid detecting the other object
-  botA.motor.rotateArdumotoCW(150);
-  delay(100);
-  botA.motor.rotateArdumotoCW(150);
-  delay(100);
-  botA.motor.rotateArdumotoCW(150);
-  delay(100);
-  botA.motor.rotateArdumotoCW(150);
-  delay(100);
-
-  // Signify that we are looking to confirm the position
-  botC.pos.control = 1;
-  // Detect the second robot, denoting it botC
-  botA.findObject(botC.pos);
-
   while(!endC){
-  // Send the recorded position to a given robot and determine its ID
-  // If the previous robot was ID 0x2345, try the other robot
-  if (idB == 0x2345){
+    // LED Indication
+    botA.flashLed(red_LED, 3);
+    
+    // Rotate the robot to avoid detecting the same object twice
+    botA.motor.rotateArdumotoCW(120);
+    delay(175);
+    botA.motor.stopArdumoto(MOTOR_A);
+    botA.motor.stopArdumoto(MOTOR_B);
+
+    // Signify that we are looking to confirm the position
+    botC.pos.control = 1;
+    // Detect the second robot, denoting it botC
+    botA.findObject(botC.pos);
+    // Send the recorded position to a given robot and determine its ID
+    // If the previous robot was ID 0x2345, try the other robot
+    if (idB == 0x2345){
       success = botA.sendPosition(0x3456, botC.pos);
       // Other robot will send back a bool signifying whether it is the robot in question
       foundC = botA.receiveConfirmation();
@@ -148,70 +134,8 @@ void loop() {
   // Send the determined necessary bearing and heading to the desired robot
   success = botA.sendPosition(moveAddr, botA.pos);
   
-  ////// -------- TEST CODE ------------
-  /*
-  float inches;
-  Ultrasonic ultrasonic(7);
-  ultrasonic.DistanceMeasure();
-  inches = ultrasonic.microsecondsToInches();
-  Serial.println(inches);
-  
-  botA.motor.driveArdumoto(1,1,200);
-  botA.motor.driveArdumoto(0,1,200);
-  delay(3000);
-
-  float bearing = 0;
-  
-  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  bearing = botA.addeg(euler.x(), 180);
-  Serial.println(bearing);;
-  
-  botA.pos.control = 1;
-  botA.pos.distance = 12;
-  botA.pos.bearing1 = 104;
-  botA.pos.bearing2 = 1;
-  botA.pos.bearing = 5;
-  
-  /*
-  // Control
-  uint8_t payload[] = {0, botA.pos.control};
-  // Send to bot 1
-  botA.send(0x2345, payload);
-  // Delay to prevent interference from subsequent transmission
-  delay(1000);
-  
-  // Distance
-  uint8_t payload1[] = {1, botA.pos.distance};
-  // Send to bot 1
-  botA.send(0x2345, payload1);
-  // Delay to prevent interference from subsequent transmission
-  delay(1000);
-  
-  // Bearing 1
-  uint8_t payload2[] = {2, botA.pos.bearing1};
-  // Send to bot 1
-  botA.send(0x2345, payload2);
-  // Delay to prevent interference from subsequent transmission
-  delay(1000);
-  
-  // Bearing 2
-  uint8_t payload3[] = {3, botA.pos.bearing2};
-  // Send to bot 1
-  botA.send(0x2345, payload3);
-  // Delay to prevent interference from subsequent transmission
-  delay(1000);
-  
-  botA.pos.control = 1;
-  botA.pos.distance = 12;
-  botA.pos.bearing1 = 104;
-  botA.pos.bearing2 = 1;
-  botA.pos.bearing = 5;
-  
-  foundB = botA.confirmPosition(botA.pos);
-  
-  delay(15000);
-  */
-  
-  //// -------- END TEST CODE -------------- 
+  // Sleep
+  cli();
+  sleep_enable();
+  sleep_cpu();
 }

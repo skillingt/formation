@@ -25,7 +25,6 @@ void Robot::init_Robot() {
   ultrasonic.begin(7);
 }
 
-
 bool Robot::findObject(Position &pos) {
   // Detects an object, rotates past it, then determines the middle
   // Note: 180 is added to the heading due to the orientation of the sensor on the chassis
@@ -38,11 +37,11 @@ bool Robot::findObject(Position &pos) {
   double angle_diff;
   double desired_angle;
   // Motor parameters
-  int rotate_speed = 120;
+  int rotate_speed = 100;
   int rotate_time = 30;
-  int rotate_delay = 100;
+  int rotate_delay = 30;
   // Boundary conditions
-  int max_distance = 36; // (in inches)
+  int max_distance = 30; // (in inches)
   int distance_buffer = 5;
   // Detection Logic Flags
   bool detected = false;
@@ -69,7 +68,7 @@ bool Robot::findObject(Position &pos) {
       // Record the distance and current heading
       distance = inches;
       euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-      initial_heading = addeg(euler.x(), 180);
+      initial_heading = addAngle(euler.x(), 180);
     }     
   }
   // Visual confirmation of detection
@@ -89,18 +88,18 @@ bool Robot::findObject(Position &pos) {
       motor.stopArdumoto(MOTOR_B);
       delay(500);
       euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-      end_heading = addeg(euler.x(), 180);
+      end_heading = addAngle(euler.x(), 180);
       // Determine the difference between the two angles
-      angle_diff = anglediff(end_heading, initial_heading);  
+      angle_diff = diffAngle(end_heading, initial_heading);  
     } 
   }
   // Determine the midway point
-  desired_angle = angle_diff/2;
+  desired_angle = angle_diff / 2;
   // Visual confirmation of detection
   delay(1000);
   // Rotate to the center of the detected robot
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  while(!(addeg(euler.x(), 180) >= (subdeg(end_heading, desired_angle)-2) && addeg(euler.x(), 180) <= (subdeg(end_heading, desired_angle)))){
+  while(!(addAngle(euler.x(), 180) >= (subAngle(end_heading, desired_angle)-2) && addAngle(euler.x(), 180) <= (subAngle(end_heading, desired_angle)))){
     motor.rotateArdumotoCCW(rotate_speed);
     delay(rotate_time);
     motor.stopArdumoto(MOTOR_A);
@@ -112,47 +111,22 @@ bool Robot::findObject(Position &pos) {
 
   // Record the final heading and distance 
   euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  pos.bearing = addeg(euler.x(), 180);
+  pos.bearing = addAngle(euler.x(), 180);
+  ultrasonic.DistanceMeasure();
   pos.distance = ultrasonic.microsecondsToInches();
 }
 
 bool Robot::confirmPosition(Position &pos){
-  // Given a position, rotate to opposite bearing, check distance
+  // Given a position, rotate to 180 opposite bearing, 
+  // check the distance to an object and send to the master
   
   // Declare local variables
-  double desired_bearing = 0.0;
-  double tolerance_in = 3.0; // 3 inches
-  double tolerance_deg = 5.0; // 5 degrees
-  int time_delay = 50; // time delay in ms
-  int speed = 200; // speed in range 0-255
-  double bearing = 0; 
-  imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+  double tolerance_in = 5.0; // 5 inches
 
-  // Calculate the desired heading based on the given heading
-  desired_bearing = pos.bearing + 180.0;
-  // Check bounds
-  if (desired_bearing > 360.0){
-    desired_bearing -= 360.0;
-  }
+  // Calculate the reverse angle
+  pos.bearing = backAngle(pos.bearing);
 
-  // Determine current bearing, note sensor is backwards
-  euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-  bearing = addeg(euler.x(), 180.0);
-
-  // Rotate to the desired bearing
-  while(abs(bearing - desired_bearing) > tolerance_deg){
-    // TODO(Bonus): Determine which way is faster to rotate
-    // Rotate the motors
-    motor.rotateArdumotoCW(speed);
-    delay(time_delay);
-    // Stop the motors
-    motor.stopArdumoto(MOTOR_A);
-    motor.stopArdumoto(MOTOR_B);
-    // Take a measurement, updating the global variable bearing
-    delay(time_delay);
-    euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    bearing = addeg(euler.x(), 180.0);
-  }
+  rotateToBearing(pos);
 
   // Get the distance to the object
   ultrasonic.DistanceMeasure();
@@ -294,56 +268,11 @@ bool Robot::receiveConfirmation(){
             option = rx16.getOption();
             data_1 = rx16.getData(0);
             data_2 = rx16.getData(1);
-            // See what data bits are coming in
-            delay(500);
-            digitalWrite(green_LED, HIGH);
-            delay(2000);
-            digitalWrite(green_LED, LOW);
-            delay(500);
-            for (int i = 0; i < data_1; i++){
-              digitalWrite(red_LED, HIGH);
-              delay(300);
-              digitalWrite(red_LED, LOW);
-              delay(300);
-            }
-            delay(500);
-            digitalWrite(green_LED, HIGH);
-            delay(2000);
-            digitalWrite(green_LED, LOW);
-            delay(500);
-            for (int i = 0; i < data_2; i++){
-              digitalWrite(red_LED, HIGH);
-              delay(300);
-              digitalWrite(red_LED, LOW);
-              delay(300);
-            }
-            delay(5000);
             if (data_1 == 0x06 && data_2 == 0x06){
-              flashLed(green_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
-              delay(500);
-              flashLed(green_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
               return true;
             } else if (data_1 == 0x04 && data_2 == 0x04){
-              flashLed(red_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
-              delay(500);
-              flashLed(red_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
               return false;
             } else {
-              flashLed(red_LED, 3);
-              delay(500);
-              flashLed(green_LED, 3);
-              delay(500);
-              flashLed(red_LED, 3);
-              delay(500);
-              flashLed(green_LED, 3);
               return false;
             }
           } else {
@@ -352,32 +281,11 @@ bool Robot::receiveConfirmation(){
             option = rx64.getOption();
             data_1 = rx64.getData(0);
             data_2 = rx64.getData(1);
-            if (data_1 == 0xDD && data_2 == 0xDD){
-              flashLed(green_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
-              delay(500);
-              flashLed(green_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
+            if (data_1 == 0x06 && data_2 == 0x06){
               return true;
-            } else if (data_1 == 0xCC && data_2 == 0xCC){
-              flashLed(red_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
-              delay(500);
-              flashLed(red_LED, 3);
-              delay(500);
-              flashLed(orange_LED, 3);
+            } else if (data_1 == 0x04 && data_2 == 0x04){
               return false;
             } else {
-              flashLed(red_LED, 3);
-              delay(500);
-              flashLed(green_LED, 3);
-              delay(500);
-              flashLed(red_LED, 3);
-              delay(500);
-              flashLed(green_LED, 3);
               return false;
             }
           }
@@ -402,10 +310,10 @@ bool Robot::receive(Position &pos){
   xbee.setSerial(Serial);
 
   // Declare local variables
-  uint8_t option = 0;
-  uint16_t sendAddr = 0;
-  uint8_t flag = 0;
-  uint8_t* data;
+  uint8_t option = 0x00;
+  uint16_t sendAddr = 0x0000;
+  uint8_t flag = 0x00;
+  uint8_t* data = 0x00;
 
   // Create reusable response objects for responses we expect to handle 
   Rx16Response rx16 = Rx16Response();
@@ -446,8 +354,8 @@ bool Robot::receive(Position &pos){
                 pos.bearing2 = data[1];
                 flashLed(green_LED, 4);
                 break;
+            }
             sendAddr = rx16.getRemoteAddress16();
-          }
           } else {
             xbee.getResponse().getRx64Response(rx64);
             option = rx64.getOption();
@@ -489,14 +397,14 @@ bool Robot::receive(Position &pos){
 
 void Robot::packStruct(Position &pos){
   // Turns two uint8_t bearings into a single uint16_t bearing
+  // Shift upper bits left eight
   pos.bearing = pos.bearing2 << 8;
+  // Bitwise OR the upper eight with the lower eight
   pos.bearing |= pos.bearing1;
 }
 
 void Robot::flashLed(byte pin, int times) {
-  // 2 Flashes (Green or Red): Send
-  // 3 Flashes (Green or Red): Receive 
-  // Alternating Green or Red and Orange Flashes: ID
+  // Flash an LED given the pin and number of times to blink
   int wait = 100;
   for (int i = 0; i < times; i++) {
     digitalWrite(pin, HIGH);
@@ -508,52 +416,28 @@ void Robot::flashLed(byte pin, int times) {
   }
 }
 
-// Find the difference between angles/bearings
-float Robot::anglediff(float a, float b){
-    float big;    //bigger number
-    float small;  //smaller number
-    float answer;
-    if (a > b){
-        big = a;
-        small = b;
-    }
-    else{
-        big = b;
-        small = a;
-    }
-    answer = big - small;
-    if (answer > 180){
-        answer = 360 - answer;
-    }
-    return answer;
+uint16_t Robot::diffAngle(uint16_t a, uint16_t b){
+  // Returns the difference between two angles [0, 180]
+  return (abs(a - b) > 180) ? abs(abs(a - b) - 360) : abs(a - b);
 }
 
-// Subtract angles (a - b)
-float Robot::subdeg(float a, float b){
-    float answer;
-    answer = a - b;
-    if (answer < 0){
-        answer = answer + 360;
-    }
-    return answer;
+uint16_t Robot::subAngle(uint16_t a, uint16_t b){
+  // Returns the result of (a - b)
+  uint16_t answer;
+  answer = a - b;
+  return (answer < 0) ? answer += 360 : answer;
 }
 
-// Adds two angles
-float Robot::addeg(float a, float b){
-    float answer;
-    answer = a + b;
-    if (answer > 360){
-        answer = answer - 360;
-    }
-    return answer;
+uint16_t Robot::addAngle(uint16_t a, uint16_t b){
+  // Returns the result of (a - b)
+  uint16_t answer;
+  answer = a + b;
+  return (answer > 360) ? (answer - 360) : answer;
 }
 
-// Return the opposite direction
-float Robot::backAngle(float a) {
-  float answer;
-  if (a < 180) answer = a + 180;
-  else answer = a - 180;
-  return answer;
+uint16_t Robot::backAngle(uint16_t a) {
+  // Return the opposite direction
+  return (a < 180) ? a + 180 : a - 180;
 }
 
 // Add or substract beta for final direction of robot.
@@ -563,31 +447,31 @@ float Robot::betaDirSelect(float brgMOV, float brgREF, float beta) {
   float reverseBrgRef = backAngle(brgREF);
   float betaPlus, betaMinus;
   float compare1, compare2;
-  if (anglediff(brgMOV, brgREF) < 60) {
-    betaPlus = addeg(reverseBrgMov, beta);
-    betaMinus = subdeg(reverseBrgMov, beta);
-    compare1 = anglediff(reverseBrgRef, betaPlus);
-    compare2 = anglediff(reverseBrgRef, betaMinus);
+  if (diffAngle(brgMOV, brgREF) < 60) {
+    betaPlus = addAngle(reverseBrgMov, beta);
+    betaMinus = subAngle(reverseBrgMov, beta);
+    compare1 = diffAngle(reverseBrgRef, betaPlus);
+    compare2 = diffAngle(reverseBrgRef, betaMinus);
     if (compare1 < compare2)
       chooseDir = betaPlus;
     else
       chooseDir = betaMinus;
   }
-  else if (anglediff(brgMOV, brgREF) > 60 && anglediff(brgMOV, brgREF) <= 90) {
-    betaPlus = addeg(reverseBrgMov, beta);
-    betaMinus = subdeg(reverseBrgMov, beta);
-    compare1 = anglediff(reverseBrgRef, betaPlus);
-    compare2 = anglediff(reverseBrgRef, betaMinus);
+  else if (diffAngle(brgMOV, brgREF) > 60 && diffAngle(brgMOV, brgREF) <= 90) {
+    betaPlus = addAngle(reverseBrgMov, beta);
+    betaMinus = subAngle(reverseBrgMov, beta);
+    compare1 = diffAngle(reverseBrgRef, betaPlus);
+    compare2 = diffAngle(reverseBrgRef, betaMinus);
     if (compare1 < compare2)
       chooseDir = betaMinus;
     else 
       chooseDir = betaPlus;
   }
-  else if (anglediff(brgMOV, brgREF) > 90) {
-    betaPlus = addeg(reverseBrgMov, beta);
-    betaMinus = subdeg(reverseBrgMov, beta);
-    compare1 = anglediff(brgREF, betaPlus);
-    compare2 = anglediff(brgREF, betaMinus);
+  else if (diffAngle(brgMOV, brgREF) > 90) {
+    betaPlus = addAngle(reverseBrgMov, beta);
+    betaMinus = subAngle(reverseBrgMov, beta);
+    compare1 = diffAngle(brgREF, betaPlus);
+    compare2 = diffAngle(brgREF, betaMinus);
     if (compare1 < compare2)
       chooseDir = betaPlus;
     else
@@ -598,17 +482,20 @@ float Robot::betaDirSelect(float brgMOV, float brgREF, float beta) {
 
 
 void Robot::findTriangle(Position &pos, Position &pos2, Position &pos3){
+  // Determines the bearing and distance for a robot to drive to complete 
+  // an equilateral triangle given two robots' positions
+
+  // Declare variables
   float brgX, brgY, rngX, rngY, brgREF, brgMOV, rngREF, rngMOV, brgNEW, pi;
   pi = 3.14159;
   brgX = pos.bearing;
-  brgY = pos2.bearing;
   rngX = pos.distance;
+  brgY = pos2.bearing;
   rngY = pos2.distance;
 
   // MAST scans cw for bots
   // MAST finds first bot, records (brgX, rngX)
   // MAST finds second bot, records (brgY, rngY)
-  // (brgX, rngX) and (brgY, rngY) given for test
 
   // Choose REF, MOV
   //min(rngX, rngY) to name X or Y REF (whichever is closer) and the other MOV
@@ -629,25 +516,34 @@ void Robot::findTriangle(Position &pos, Position &pos2, Position &pos3){
     pos3.control = 1;
   }
 
-  // TODO: Add case if angleDiff(brgX, brgY) ~= 60
+  // TODO: Add case if diffAngle(brgX, brgY) ~= 60
 
   // Find brgNEW
-  float brgNEWa = addeg(brgREF, 60);
-  float brgNEWb = subdeg(brgREF, 60);
-  float a = anglediff(brgMOV, brgNEWa);
-  float b = anglediff(brgMOV, brgNEWb);
+  float brgNEWa = addAngle(brgREF, 60);
+  float brgNEWb = subAngle(brgREF, 60);
+  float a = diffAngle(brgMOV, brgNEWa);
+  float b = diffAngle(brgMOV, brgNEWb);
   // Use min(a, b) to name brgNEWa or brgNEWb brgNEW
   if (a <= b) brgNEW = brgNEWa;
   else brgNEW = brgNEWb;
 
   // Find brgC, which is used to find distance to move
-  float brgC = anglediff(brgMOV, brgNEW);
+  // This is the angle C in the diagram
+  float brgC = diffAngle(brgMOV, brgNEW);
 
   // Find distance to move rngC
+  // Use the Law of Cosines to determine the distance needed to move MOV
+  // The distance between the MASTER and the point to move to is known
+  // as we are creating an equilateral triangle and one side length is known (REF)
   float rngC = sqrt(pow(rngREF, 2) + pow(rngMOV, 2) - 2 * rngREF*rngMOV*cos(brgC*pi / 180));
 
   // Find brgB
   float brgB = asin(rngREF*sin(brgC*pi / 180) / rngC) * 180 / pi;
+
+  // Better: Use Law of Cosines again knowing rngMOV and rngRef (and rngC) and brgC (angleC)
+
+
+  // Check with green light
 
   // Find turn direction for MOV
   float brgBFinal = betaDirSelect(brgMOV, brgREF, brgB);
