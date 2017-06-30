@@ -48,9 +48,10 @@ class Robot
     bool receiveConfirmation();
     bool receive(Position &pos);
     void packStruct(Position &pos);
-    void findTriangle(Position &pos, Position &pos2, Position &pos3);
+    void findTriangle(Position &botB, Position &botC, Position &botA);
     // Helper functions for angles and findTriangle
-    float betaDirSelect(float brgMOV, float brgREF, float beta);
+    uint16_t getFinalBearing(uint16_t mov_brng, uint16_t ref_brng, uint16_t rel_angle);
+    uint16_t lawOfCosines(uint16_t a, uint16_t b, uint16_t angle);
     uint16_t diffAngle(uint16_t a, uint16_t b);
     uint16_t subAngle(uint16_t a, uint16_t b);
     uint16_t addAngle(uint16_t a, uint16_t b);

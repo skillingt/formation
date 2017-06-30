@@ -37,7 +37,7 @@ bool Robot::findObject(Position &pos) {
   double angle_diff;
   double desired_angle;
   // Motor parameters
-  int rotate_speed = 100;
+  int rotate_speed = 80;
   int rotate_time = 30;
   int rotate_delay = 30;
   // Boundary conditions
@@ -440,116 +440,111 @@ uint16_t Robot::backAngle(uint16_t a) {
   return (a < 180) ? a + 180 : a - 180;
 }
 
-// Add or substract beta for final direction of robot.
-float Robot::betaDirSelect(float brgMOV, float brgREF, float beta) {
-  float chooseDir;
-  float reverseBrgMov = backAngle(brgMOV);
-  float reverseBrgRef = backAngle(brgREF);
-  float betaPlus, betaMinus;
-  float compare1, compare2;
-  if (diffAngle(brgMOV, brgREF) < 60) {
-    betaPlus = addAngle(reverseBrgMov, beta);
-    betaMinus = subAngle(reverseBrgMov, beta);
-    compare1 = diffAngle(reverseBrgRef, betaPlus);
-    compare2 = diffAngle(reverseBrgRef, betaMinus);
-    if (compare1 < compare2)
-      chooseDir = betaPlus;
-    else
-      chooseDir = betaMinus;
-  }
-  else if (diffAngle(brgMOV, brgREF) > 60 && diffAngle(brgMOV, brgREF) <= 90) {
-    betaPlus = addAngle(reverseBrgMov, beta);
-    betaMinus = subAngle(reverseBrgMov, beta);
-    compare1 = diffAngle(reverseBrgRef, betaPlus);
-    compare2 = diffAngle(reverseBrgRef, betaMinus);
-    if (compare1 < compare2)
-      chooseDir = betaMinus;
-    else 
-      chooseDir = betaPlus;
-  }
-  else if (diffAngle(brgMOV, brgREF) > 90) {
-    betaPlus = addAngle(reverseBrgMov, beta);
-    betaMinus = subAngle(reverseBrgMov, beta);
-    compare1 = diffAngle(brgREF, betaPlus);
-    compare2 = diffAngle(brgREF, betaMinus);
-    if (compare1 < compare2)
-      chooseDir = betaPlus;
-    else
-      chooseDir = betaMinus;
-  }
-  return chooseDir;
+uint16_t Robot::lawOfCosines(uint16_t a, uint16_t b, uint16_t angle){
+  // Return the side length c given sides a, b and the opposite angle, angle
+  return sqrt(pow(a, 2) + pow(b, 2) - 2 * a * b * cos(angle * (PI / 180)));
 }
 
+uint16_t Robot::getFinalBearing(uint16_t mov_brng, uint16_t ref_brng, uint16_t rel_angle){
+  // Determine the final bearing in which to turn to complete the triangle
 
-void Robot::findTriangle(Position &pos, Position &pos2, Position &pos3){
+  // Declare variables
+  uint16_t final_brng = 0x0000;
+  uint16_t rel_angle_plus, rel_angle_minus, diff_a, diff_b = 0x0000;
+
+  // Determine the opposite angle of the reference and moving robot bearings
+  uint16_t mov_brng_rev = backAngle(mov_brng);
+  uint16_t ref_brng_rev = backAngle(ref_brng);
+
+  // Based on the geometry, determine which bearing to rotate to relative to North
+  if (diffAngle(mov_brng, ref_brng) <= 60){
+    rel_angle_plus = addAngle(mov_brng_rev, rel_angle);
+    rel_angle_minus = subAngle(mov_brng_rev, rel_angle);
+    diff_a = diffAngle(ref_brng_rev, rel_angle_plus);
+    diff_b = diffAngle(ref_brng_rev, rel_angle_minus);
+    if (diff_a < diff_b){
+      final_brng = rel_angle_plus;
+    } else {
+      final_brng = rel_angle_minus;
+    }
+  } else if (diffAngle(mov_brng, ref_brng) > 60 && diffAngle(mov_brng, ref_brng) <= 90){
+    rel_angle_plus = addAngle(mov_brng_rev, rel_angle);
+    rel_angle_minus = subAngle(mov_brng_rev, rel_angle);
+    diff_a = diffAngle(ref_brng_rev, rel_angle_plus);
+    diff_b = diffAngle(ref_brng_rev, rel_angle_minus);
+    if (diff_a < diff_b){
+      final_brng = rel_angle_minus;
+    } else {
+      final_brng = rel_angle_plus;
+    }
+  } else if (diffAngle(mov_brng, ref_brng) > 90){
+    rel_angle_plus = addAngle(mov_brng_rev, rel_angle);
+    rel_angle_minus = subAngle(mov_brng_rev, rel_angle);
+    diff_a = diffAngle(ref_brng, rel_angle_plus);
+    diff_b = diffAngle(ref_brng, rel_angle_minus);
+    if (diff_a < diff_b){
+      final_brng = rel_angle_plus;
+    } else {
+      final_brng = rel_angle_minus;
+    }
+  }
+  return final_brng;
+}
+
+void Robot::findTriangle(Position &botB, Position &botC, Position &botA){
   // Determines the bearing and distance for a robot to drive to complete 
   // an equilateral triangle given two robots' positions
 
+  // botB is the first detected robot, botC is the second, 
+  // and botA is the struct filled with new coordinates to move to
+  // This matches the nomenclature used in TriangleTx
+
   // Declare variables
-  float brgX, brgY, rngX, rngY, brgREF, brgMOV, rngREF, rngMOV, brgNEW, pi;
-  pi = 3.14159;
-  brgX = pos.bearing;
-  rngX = pos.distance;
-  brgY = pos2.bearing;
-  rngY = pos2.distance;
+  uint8_t ref_dist, mov_dist = 0x00;
+  uint16_t ref_brng, mov_brng = 0x0000;
 
-  // MAST scans cw for bots
-  // MAST finds first bot, records (brgX, rngX)
-  // MAST finds second bot, records (brgY, rngY)
-
-  // Choose REF, MOV
-  //min(rngX, rngY) to name X or Y REF (whichever is closer) and the other MOV
-  if (rngX <= rngY) {
-    rngREF = rngX;
-    brgREF = brgX;
-    rngMOV = rngY;
-    brgMOV = brgY;
-    // Pos2 is moving
-    pos3.control = 2;
-  }
-  else {
-    rngREF = rngY;
-    brgREF = brgY;
-    rngMOV = rngX;
-    brgMOV = brgX;
-    // Pos is moving
-    pos3.control = 1;
+  // Determine which robot will move based on which one is closer to MASTER
+  // Farther robot moves and is denoted MOV, closer stays and is denoted REF
+  if (botB.distance <= botC.distance) {
+    ref_dist = botB.distance;
+    ref_brng = botB.bearing;
+    mov_dist = botC.distance;
+    mov_brng = botC.bearing;
+    // botC is moving
+    botA.control = 0x02;
+  } else {
+    ref_dist = botC.distance;
+    ref_brng = botC.bearing;
+    mov_dist = botB.distance;
+    mov_brng = botB.bearing;
+    // botB is moving
+    botA.control = 0x01;
   }
 
-  // TODO: Add case if diffAngle(brgX, brgY) ~= 60
+  // Determine the bearing (relative to North) of the third vertex
+  uint16_t abs_brng, vertex_a, vertex_b, diff_a, diff_b = 0x0000;
+  // Third vertex must be 60 degrees from reference in an equilateral triangle
+  vertex_a = addAngle(ref_brng, 60);
+  vertex_b = subAngle(ref_brng, 60);
+  // Determine which vertex is closer to the robot who will move
+  diff_a = diffAngle(mov_brng, vertex_a);
+  diff_b = diffAngle(mov_brng, vertex_b);
+  // Choose the vertex which has a smaller angle relative to the moving robot's bearing
+  (diff_a <= diff_b) ? abs_brng = vertex_a : abs_brng = vertex_b;
 
-  // Find brgNEW
-  float brgNEWa = addAngle(brgREF, 60);
-  float brgNEWb = subAngle(brgREF, 60);
-  float a = diffAngle(brgMOV, brgNEWa);
-  float b = diffAngle(brgMOV, brgNEWb);
-  // Use min(a, b) to name brgNEWa or brgNEWb brgNEW
-  if (a <= b) brgNEW = brgNEWa;
-  else brgNEW = brgNEWb;
+  // Determine the distance and bearing needed by MOV to complete the triangle
+  // Calculate the angle between the new vertex's bearing and the bearing of MOV
+  uint16_t int_angle = diffAngle(mov_brng, abs_brng);
 
-  // Find brgC, which is used to find distance to move
-  // This is the angle C in the diagram
-  float brgC = diffAngle(brgMOV, brgNEW);
+  // Calculate the distance MOV has to travel to reach the final vertex
+  // The distance between the MASTER and the vertex is known
+  // as we are creating an equilateral triangle
+  botA.distance = lawOfCosines(ref_dist, mov_dist, int_angle);
 
-  // Find distance to move rngC
-  // Use the Law of Cosines to determine the distance needed to move MOV
-  // The distance between the MASTER and the point to move to is known
-  // as we are creating an equilateral triangle and one side length is known (REF)
-  float rngC = sqrt(pow(rngREF, 2) + pow(rngMOV, 2) - 2 * rngREF*rngMOV*cos(brgC*pi / 180));
+  // Calculate the angle to turn relative to mov_brng, converting to radians and back
+  uint16_t rel_angle = asin(ref_dist * sin(int_angle * PI / 180) / botA.distance) * 180 / PI;
+  // Could also use Law of Cosines knowing ref_dist, mov_dist, and botA.distance
 
-  // Find brgB
-  float brgB = asin(rngREF*sin(brgC*pi / 180) / rngC) * 180 / pi;
-
-  // Better: Use Law of Cosines again knowing rngMOV and rngRef (and rngC) and brgC (angleC)
-
-
-  // Check with green light
-
-  // Find turn direction for MOV
-  float brgBFinal = betaDirSelect(brgMOV, brgREF, brgB);
-
-  // Move MOV, in brgBFinal, rngC centimeters
-  // Update third Position struct with movement information
-  pos3.distance = rngC;
-  pos3.bearing = brgBFinal;
+  // Find the bearing relative to North, as there are two solutions with the relative angle
+  botA.bearing = getFinalBearing(mov_brng, ref_brng, rel_angle);
 }

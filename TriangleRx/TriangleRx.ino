@@ -76,7 +76,7 @@ void loop() {
     // Drive
     // Convert inches to centimeters
     double centimeters = botA.pos.distance * 2.54;
-    uint8_t travel_speed = 100;
+    uint8_t travel_speed = 80;
     botA.motor.driveDistance(travel_speed, centimeters);
   } else {
     // Control bit not identified
