@@ -15,4 +15,6 @@ Chassis:
 
 Software: C++
 
+Power: Tenergy 9V 250mAh NiMH Rechargeable Battery
+
 Completed Spring/Summer 2017 as part of an Independent Study under Prof. Bahram Shafai, Northeastern University
